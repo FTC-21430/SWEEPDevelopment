@@ -52,7 +52,6 @@ public class FollowSplineSegment implements Segment {
 		// TODO: Implement pose lookup for runtime spline-follow segment.
 		return null;
 	}
-
 	/**
 	 * @param overallTime absolute time in seconds
 	 * @return empty vector until follow-spline runtime behavior is implemented

@@ -25,8 +25,6 @@ public class PathBuilderExampleUsage extends SWEEPRoute {
                 .splineTo(10, 10, 0.5) // robot will move in a spline path toward end point from wherever the last point was (start), robot heading will follow the curve of the path
                 .splineToAngle(20, 20, 90, 0.5) // robot will move in a spline path toward end point from wherever the last point was, robot heading will follow the curve of the path and end at the specified angle
                 .addBreak() // adds a break in the path, robot will slow down and stop at the point, but immediately continue to the next point in the path
-                .linearTo(30, 30, 0.5) // robot will move in a straight line toward end point from wherever the last point was
-                .linearToAngle(40, 40, 180, 0.5) // robot will move in a straight line toward end point from wherever the last point was, robot heading will end at the specified angle
                 .addAction(r.exampleAction()) // adds an action to be executed at the current point in the path
                 .waitAt(2) // robot will wait at the current point for the specified duration (in seconds)
                 .end(60, 60, 270, 0.5) // robot will move to the end point with the specified coordinates and heading

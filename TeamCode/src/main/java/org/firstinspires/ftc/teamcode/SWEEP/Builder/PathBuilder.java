@@ -126,68 +126,12 @@ public class PathBuilder {
         return this;
     }
     /**
-     * Adds a linear waypoint to the path.
-     * Robot heading will be fixed to the slope of the linear path between the previous waypoint and the new waypoint.
-     * @param x The x coordinate of the waypoint.
-     * @param y The y coordinate of the waypoint.
-     * @param speed The speed at which the robot should travel to the waypoint.
-     * @return The current PathBuilder instance, allowing for method chaining.
-     */
-    public PathBuilder linearTo(double x, double y, double speed){
-        speed = clipSpeedToRange(speed);
-        waypoints.add(new LinearWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),speed));
-        previousCoordinate = new Coordinate(x,y,0);
-        return this;
-    }
-    /**
-     * Adds a linear waypoint to the path using a defined coordinate.
-     * Robot heading will be fixed to the slope of the linear path between the previous waypoint and the new waypoint.
-     * @param definedCoordinate The coordinate of the waypoint.
-     * @param speed The speed at which the robot should travel to the waypoint.
-     * @return The current PathBuilder instance, allowing for method chaining.
-     */
-    public PathBuilder linearTo(Coordinate definedCoordinate, double speed) {
-        speed = clipSpeedToRange(speed);
-        waypoints.add(new LinearWaypoint(definedCoordinate.getX(), definedCoordinate.getY(), speed));
-        previousCoordinate = definedCoordinate;
-        return this;
-    }
-
-    /**
      * Adds a break waypoint to the path.
      * break waypoints will force the robot to slow down and continue on the path, ignoring previous waypoint tangents and angles.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
     public PathBuilder addBreak(){
         waypoints.add(new BreakWaypoint(previousCoordinate));
-        return this;
-    }
-    /**
-     * Adds a linear waypoint with a specified angle to the path.
-     * The robot heading will smoothly transition to the specified angle as it approaches the waypoint, while maintaining a linear path.
-     * @param x The x coordinate of the waypoint.
-     * @param y The y coordinate of the waypoint.
-     * @param angle The angle at which the robot should be oriented at the waypoint.
-     * @param speed The speed at which the robot should travel to the waypoint.
-     * @return The current PathBuilder instance, allowing for method chaining.
-     */
-    public PathBuilder linearToAngle(double x, double y, double angle, double speed){
-        speed = clipSpeedToRange(speed);
-        waypoints.add(new LinearAngleWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),angle,speed));
-        previousCoordinate = new Coordinate(x,y,angle);
-        return this;
-    }
-    /**
-     * Adds a linear waypoint with a specified angle using a defined coordinate.
-     * The robot heading will smoothly transition to the specified angle as it approaches the waypoint, while maintaining a linear path.
-     * @param definedCoordinate The coordinate of the waypoint.
-     * @param speed The speed at which the robot should travel to the waypoint.
-     * @return The current PathBuilder instance, allowing for method chaining.
-     */
-    public PathBuilder linearToAngle(Coordinate definedCoordinate, double speed){
-        speed = clipSpeedToRange(speed);
-        waypoints.add(new LinearAngleWaypoint(definedCoordinate, speed));
-        previousCoordinate = definedCoordinate;
         return this;
     }
     /**
@@ -313,11 +257,8 @@ public class PathBuilder {
             case SPLINE_ANGLE:
                 //TODO create spline angle segment class and generation algorithm
                 break;
-            case LINEAR:
-                //TODO create linear segment class and generation algorithm
-                break;
-            default: // Also case for LinearAngle
-                //TODO create linear angle segment class and generation algorithm
+            default: //Spline
+                //TODO create spline class and generation algorithm
                 break;
             //TODO: Add more cases for new waypoint types as they are created
             //IDEA: Segment that forces the robot to always look at a specified coordinate on the field, with a linear and cubic spline version
