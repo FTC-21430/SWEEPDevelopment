@@ -38,45 +38,11 @@ public class WaitSegment implements Segment {
 	}
 
 	/**
-	 * @return absolute start time in seconds
-	 */
-	@Override
-	public double getStartTime() {
-		return startTime;
-	}
-
-	/**
-	 * @return absolute end time in seconds
-	 */
-	@Override
-	public double getEndTime() {
-		return endTime;
-	}
-
-	/**
-	 * @param time absolute time in seconds
-	 * @return true when {@code time} is within [startTime, endTime)
-	 */
-	@Override
-	public boolean activeAt(double time) {
-		return startTime <= time && time < endTime;
-	}
-
-	/**
 	 * @param overallTime absolute time in seconds
 	 * @return the held pose for this segment
 	 */
 	@Override
 	public Coordinate getPosition(double overallTime) {
 		return position;
-	}
-
-	/**
-	 * @param overallTime absolute time in seconds
-	 * @return [0, 0] because wait segments do not translate
-	 */
-	@Override
-	public double[] getVelocity(double overallTime) {
-		return new double[]{0, 0};
 	}
 }
