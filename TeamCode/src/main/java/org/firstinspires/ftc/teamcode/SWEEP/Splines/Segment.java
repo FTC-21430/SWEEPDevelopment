@@ -26,4 +26,5 @@ public interface Segment {
 		Coordinate end = getPosition(tEnd);
 		return Coordinate.getDistanceBetweenCoordinates(start, end);
 	}
+	double getSpeedRate();
 }

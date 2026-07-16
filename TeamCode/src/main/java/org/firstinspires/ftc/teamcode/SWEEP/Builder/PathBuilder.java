@@ -5,9 +5,9 @@ import org.firstinspires.ftc.teamcode.SWEEP.Classes.SWEEPAction;
 import org.firstinspires.ftc.teamcode.SWEEP.Classes.Waypoint;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.EndWaypoint;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.BreakWaypoint;
-import org.firstinspires.ftc.teamcode.SWEEP.Splines.LinearAngleWaypoint;
-import org.firstinspires.ftc.teamcode.SWEEP.Splines.LinearWaypoint;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segment;
+import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segments.AngledSplineSegment;
+import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segments.FollowSplineSegment;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segments.WaitSegment;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.SplineAngleWaypoint;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.SplineWaypoint;
@@ -176,11 +176,10 @@ public class PathBuilder {
      * @param x The x coordinate of the end waypoint.
      * @param y The y coordinate of the end waypoint.
      * @param angle The angle at which the robot should be oriented at the end waypoint.
-     * @param speed The speed at which the robot should travel to the end waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder end(double x, double y, double angle, double speed){
-        waypoints.add(new EndWaypoint(x,y,angle,speed));
+    public PathBuilder end(double x, double y, double angle){
+        waypoints.add(new EndWaypoint(x,y,angle));
         previousCoordinate = new Coordinate(x,y,angle);
         return this;
     }
@@ -189,11 +188,10 @@ public class PathBuilder {
      * End waypoint must be the last waypoint in the path.
      * The robot will stop at this waypoint and end following the path from this point.
      * @param coordinate The coordinate of the end waypoint.
-     * @param speed The speed at which the robot should travel to the end waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder end(Coordinate coordinate, double speed){
-        waypoints.add(new EndWaypoint(coordinate, speed));
+    public PathBuilder end(Coordinate coordinate){
+        waypoints.add(new EndWaypoint(coordinate));
         previousCoordinate = coordinate;
         return this;
     }
@@ -225,41 +223,27 @@ public class PathBuilder {
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
         for (int i = 1; i < waypoints.size(); i++){
-            Segment segment = createNewSegment(i, time);
-            time += segment.getTotalTime();
+            Segment segment = createNewSegment(i);
             segments.add(segment);
         }
-        return new Path(segments.toArray(new Segment[0]), actions.toArray(new SWEEPAction[0]));
+        return null;
     }
     /**
      * Creates a new segment based on the waypoint type at the specified index.
      * This method is used internally by the build() method to create segments for the path.
      * @param waypointIndex The index of the waypoint in the waypoints array.
-     * @param time The starting time for the segment, in seconds.
      * @return A Segment object that represents the path segment between waypoints.
      */
-    private Segment createNewSegment(int waypointIndex,double time){
+    private Segment createNewSegment(int waypointIndex){
         if (waypointIndex < 1 || waypoints.get(waypointIndex).getType() == Waypoint.WaypointType.START) throw new IllegalArgumentException("Cannot create segment on type START");
         Waypoint waypoint = getWaypointInRange(waypointIndex);
         switch (waypoint.getType()){
-            case END:
-                //TODO create end segment class and generation algorithm
-                break;
             case WAIT:
-                //TODO: refine the wait segment to have the robot come to a smooth stop
-                return new WaitSegment(waypoint.getCoordinate(),time, waypoint.getDuration());
-            case BREAK:
-                //TODO create break segment class and generation algorithm
-                break;
+                return new WaitSegment(waypoint.getCoordinate(), waypoint.getDuration());
             case SPLINE:
-                //TODO create spline segment class and generation algorithm
-                break;
+                return new FollowSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
             case SPLINE_ANGLE:
-                //TODO create spline angle segment class and generation algorithm
-                break;
-            default: //Spline
-                //TODO create spline class and generation algorithm
-                break;
+                return new AngledSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
             //TODO: Add more cases for new waypoint types as they are created
             //IDEA: Segment that forces the robot to always look at a specified coordinate on the field, with a linear and cubic spline version
         }

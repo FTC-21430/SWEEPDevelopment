@@ -108,39 +108,4 @@ public class Path {
         if (startingTime < 0) throw new IllegalArgumentException("Provided Time cannot be negative");
         currentSegmentIndex = getSegmentIndexAt(startingTime);
     }
-
-    /**
-     * Gets the current segment of the path at a specific time.
-     * @param time target time
-     * @return The segment of the path at the specified time.
-     */
-    private Segment getCurrentSegment(double time){
-        return segments[getSegmentIndexAt(time)];
-    }
-
-    /**
-     * Gets the index of the segment that is active at a specific time.
-     * @param time The time at which to get the segment index.
-     * @return The index of the segment that is active at the specified time.
-     */
-    private int getSegmentIndexAt(double time){
-        if (segments.length == 0) throw new IllegalArgumentException("EmptyPath");
-        if (time < 0) throw new IllegalArgumentException("Provided Time cannot be negative");
-
-        if (time < getStartTime() || time > getEndTime()) return -1; // Time outside of path definition
-
-        //Common case that the segment we were last on is the same one
-        if (segments[currentSegmentIndex].activeAt(time)) return currentSegmentIndex;
-        // Other normal case that the path just moved forward onto the next segment
-        if (segments.length > currentSegmentIndex+1){
-            if (segments[currentSegmentIndex+1].activeAt(time)) return currentSegmentIndex+1;
-        }
-        // If neither of these are true, we will then run a linear search for the target segment
-        for (int i = 0; i < segments.length; i++){
-            if(segments[i].activeAt(time)) return i;
-        }
-
-        // if that fails then we have a big problem
-        throw new RuntimeException("No segment could be solved for time: Library Bug");
-    }
 }

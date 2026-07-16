@@ -14,34 +14,24 @@ public class EndWaypoint implements Waypoint {
 	private final Coordinate coordinate;
 
 	/**
-	 * Segment speed scale in the range [0, 1] relative to robot top speed.
-	 */
-	private final double speed;
-
-	/**
 	 * Creates an end waypoint from primitive pose values.
-	 *
 	 * @param x target x position in inches
 	 * @param y target y position in inches
 	 * @param angle target heading in degrees
-	 * @param speed segment speed scale relative to robot top speed
 	 */
-	public EndWaypoint(double x, double y, double angle, double speed) {
+	public EndWaypoint(double x, double y, double angle) {
 		this.coordinate = new Coordinate(x, y, angle);
-		this.speed = speed;
 	}
 
 	/**
 	 * Creates an end waypoint from an existing coordinate.
-	 *
 	 * @param coordinate target pose for this waypoint
-	 * @param speed segment speed scale relative to robot top speed
 	 */
-	public EndWaypoint(Coordinate coordinate, double speed) {
+	public EndWaypoint(Coordinate coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 
 		this.coordinate = coordinate;
-		this.speed = speed;
+
 	}
 
 	/**
@@ -81,7 +71,7 @@ public class EndWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getSpeed() {
-		return speed;
+		return 0;
 	}
 
 	/**

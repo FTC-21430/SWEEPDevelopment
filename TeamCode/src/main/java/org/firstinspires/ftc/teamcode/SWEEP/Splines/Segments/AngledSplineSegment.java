@@ -11,14 +11,20 @@ public class AngledSplineSegment implements Segment {
     CatmullRomCubic yCubic;
     CatmullRomCubic angleCubic;
     private final double sampleRate = 0.001; // units
+    private final double speed;
 
     /**
      * Creates a following spline segment
      */
-    public AngledSplineSegment(Waypoint p1, Waypoint p2, SplineWaypoint p3, Waypoint p4) {
+    public AngledSplineSegment(Waypoint p1, Waypoint p2, Waypoint p3, Waypoint p4) {
         xCubic = new CatmullRomCubic(p1.getX(), p2.getX(), p3.getX(), p4.getX());
         yCubic = new CatmullRomCubic(p1.getY(), p2.getY(), p3.getY(), p4.getY());
         angleCubic = new CatmullRomCubic(p1.getAngle(), p2.getAngle(), p3.getAngle(), p4.getAngle());
+        if (p4.getType() == Waypoint.WaypointType.BREAK || p4.getType() == Waypoint.WaypointType.WAIT){
+            speed = 0;
+        }else{
+            speed = p3.getSpeed();
+        }
     }
     /**
      * @param time absolute time ( must range between 0-1 )
@@ -38,6 +44,10 @@ public class AngledSplineSegment implements Segment {
             distance += Coordinate.getDistanceBetweenCoordinates(getPosition(t),getPosition(t+sampleRate));
         }
         return distance;
+    }
+    @Override
+    public double getSpeedRate(){
+        return speed;
     }
     private double putInRange(double timeUnit) {
         timeUnit = Math.min(timeUnit, 1);
