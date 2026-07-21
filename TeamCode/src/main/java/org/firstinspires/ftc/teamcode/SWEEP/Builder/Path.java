@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.SWEEP.Builder;
 
 import org.firstinspires.ftc.teamcode.SWEEP.Classes.Coordinate;
 import org.firstinspires.ftc.teamcode.SWEEP.Classes.LocalizationPacket;
+import org.firstinspires.ftc.teamcode.SWEEP.Classes.RobotMovementParameters;
 import org.firstinspires.ftc.teamcode.SWEEP.Classes.SWEEPAction;
-import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segment;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,25 +14,35 @@ import java.util.Collections;
  * A Path will have the finalized "animation" that the robot will follow, and then be passed to the movement controller to execute the path.
  */
 public class Path {
-    // The segments that make up the path
-    private final Segment[] segments;
+    // The path that takes time and returns a "Velocity" point, which provides the Coordinate and velocity that the robot should be at that time
+    private final MovementMap compiledPath;
+    // robotParams is the RobotMovementParameters interface which has everything about how the robot can move
+    private final RobotMovementParameters robotParams;
     // The actions that can be executed during the path, based on the position of the robot.
     private final ArrayList<SWEEPAction> actions;
     //The index of the current segment that the robot is on. This is used to optimize the search for the current segment.
     private int currentSegmentIndex = 0;
+
+    private final double startTime, endTime;
+
     // The action that is currently being executed. This is used to determine if the action has completed and if the next action should be executed.
     private SWEEPAction activeAction;
 
     /**
      * Constructs a Path with the given segments and actions.
-     * @param segments The segments that make up the path.
+     * @param compiledPath the velocityMap that makes up the entire path - this will be based off of the robot Params
+     * @param robotParams the parameters of the robots drivetrain and how to can move. Used by this class to apply velocity data to motor powers
      * @param actions The actions that can be executed during the path.
      */
-    public Path(Segment[] segments, SWEEPAction[] actions){
-        if (segments == null) throw new IllegalArgumentException("null path given");
+    public Path(MovementMap compiledPath, RobotMovementParameters robotParams, SWEEPAction[] actions, double startTime, double endTime){
+        if (compiledPath == null) throw new IllegalArgumentException("null path given");
+        if (robotParams == null) throw new IllegalArgumentException("null robot parameters given");
         if (actions == null) throw new IllegalArgumentException("null action array given");
-        this.segments = segments;
+        this.compiledPath = compiledPath;
+        this.robotParams = robotParams
         this.actions = new ArrayList<>();
+        this.startTime = startTime;
+        this.endTime = endTime;
         Collections.addAll(this.actions, actions);
     }
 
@@ -69,7 +79,7 @@ public class Path {
      * @return The end time of the path.
      */
     public double getEndTime(){
-        return segments[segments.length-1].getEndTime();
+        return
     }
     /**
      * Gets the start time of the path by getting the start time of the first segment.
@@ -94,18 +104,5 @@ public class Path {
     public double[] getVelocity(double time){
         return new double[]{0,0};
     }
-    /**
-     * Starts the path from the beginning.
-     */
-    public void start(){
-        currentSegmentIndex = 0;
-    }
-    /**
-     * Starts the path from a specific time.
-     * @param startingTime The time from which to start the path.
-     */
-    public void start(double startingTime){
-        if (startingTime < 0) throw new IllegalArgumentException("Provided Time cannot be negative");
-        currentSegmentIndex = getSegmentIndexAt(startingTime);
-    }
+
 }

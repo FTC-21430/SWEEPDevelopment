@@ -226,6 +226,8 @@ public class PathBuilder {
             Segment segment = createNewSegment(i);
             segments.add(segment);
         }
+
+        // TODO: Simulate through the whole path and make the velocity map forward, and backward
         return null;
     }
     /**
