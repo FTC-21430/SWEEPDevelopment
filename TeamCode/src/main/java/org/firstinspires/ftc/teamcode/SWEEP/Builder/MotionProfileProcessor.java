@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Builder;
 
+import org.firstinspires.ftc.teamcode.SWEEP.Classes.CatmullRomCubic;
 import org.firstinspires.ftc.teamcode.SWEEP.Classes.RobotMovementParameters;
 import org.firstinspires.ftc.teamcode.SWEEP.Splines.Segment;
 
@@ -24,7 +25,6 @@ public class MotionProfileProcessor {
     private void compileVelocityProfile(Segment segment){
         double[] maxCurvePoints = findMaxCurvePoints(segment);
         //Algorithm steps
-        // 1. Convert segment into a segment in terms of distance traveled along its curve
         // 2. Find the max curve points of the segment
         // 3. Use the curve of those points to determine the max robot velocity at that curve ( and therefore the slowest theoretically in the spline the robot could move at)
         // 4. Simulate at a sample rate of distance, the fastest the robot would be able to accelerate from each of those distances
@@ -32,4 +32,4 @@ public class MotionProfileProcessor {
         // 6. iterate through the velocity profile to get a full movementmap that represents the segment
         // 7. return that MovementMap which is the velocity profile.
     }
-}
+
