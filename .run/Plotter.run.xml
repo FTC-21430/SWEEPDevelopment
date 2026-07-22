@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Plotter" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="Android API 36.1, extension level 20 Platform" />
+    <option name="MAIN_CLASS_NAME" value="com.example.plot.Plotting" />
+    <module name="SWEEPDevelopment.plot.main" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -8,8 +8,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.Localization;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.LocalizationPacket;
+import com.broombots.sweep.Classes.Localization;
+import com.broombots.sweep.Classes.LocalizationPacket;
 /**
  * This class implements the Localization interface to provide localization functionality using the GoBilda Pinpoint Driver.
  * It handles the retrieval of the robot's position and orientation, as well as calculating velocities based on position changes over time.

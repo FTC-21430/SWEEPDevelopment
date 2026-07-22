@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode.ExampleCode;
 
 import org.firstinspires.ftc.teamcode.Robot.SoftwareTestingBot;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.Coordinate;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.SWEEPAction;
+import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.SWEEPAction;
 /**
  * Example action that can be triggered around a coordinate and run for a set amount of time.
  */

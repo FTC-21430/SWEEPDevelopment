@@ -3,8 +3,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.teamcode.Robot.SoftwareTestingBot;
-import org.firstinspires.ftc.teamcode.SWEEP.Builder.PathBuilder;
-import org.firstinspires.ftc.teamcode.SWEEP.Runtime.SWEEPRoute;
+import com.broombots.sweep.Builder.PathBuilder;
+import com.broombots.sweep.Runtime.SWEEPRoute;
 
 @Disabled // remove if you are going to copy and use this code.
 // Labels the route in the Driver Station menu. Change the name and group to your liking.
@@ -27,7 +27,7 @@ public class PathBuilderExampleUsage extends SWEEPRoute {
                 .addBreak() // adds a break in the path, robot will slow down and stop at the point, but immediately continue to the next point in the path
                 .addAction(r.exampleAction()) // adds an action to be executed at the current point in the path
                 .waitAt(2) // robot will wait at the current point for the specified duration (in seconds)
-                .end(60, 60, 270, 0.5) // robot will move to the end point with the specified coordinates and heading
+                .end(60, 60, 270) // robot will move to the end point with the specified coordinates and heading
                 .build(); // finalizes the path and returns a Path object
 
     }
