@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.teamcode.Robot.SoftwareTestingBot;
 import com.broombots.sweep.Builder.PathBuilder;
-import com.broombots.sweep.Runtime.SWEEPRoute;
 
 @Disabled // remove if you are going to copy and use this code.
 // Labels the route in the Driver Station menu. Change the name and group to your liking.
