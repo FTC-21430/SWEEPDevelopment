@@ -1,4 +1,5 @@
 include ':FtcRobotController'
 include ':TeamCode'
 include ':plot'
-include ':SWEEP'
+include ':SWEEP-core'
+include ':sweep-ftc'

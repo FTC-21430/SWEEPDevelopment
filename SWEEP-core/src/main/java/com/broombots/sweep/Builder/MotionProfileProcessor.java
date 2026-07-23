@@ -29,6 +29,7 @@ public class MotionProfileProcessor {
     private void compileVelocityProfile(Segment segment) {
         double[] maxCurvePoints = findMaxCurvePoints(segment);
         //Algorithm steps
+        // 1. convert to be in terms of distance
         // 2. Find the max curve points of the segment
         // 3. Use the curve of those points to determine the max robot velocity at that curve ( and therefore the slowest theoretically in the spline the robot could move at)
         // 4. Simulate at a sample rate of distance, the fastest the robot would be able to accelerate from each of those distances

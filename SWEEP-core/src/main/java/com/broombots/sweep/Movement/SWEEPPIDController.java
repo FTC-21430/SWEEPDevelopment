@@ -1,5 +1,6 @@
 package com.broombots.sweep.Movement;
 
+import com.broombots.sweep.Classes.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -38,7 +39,7 @@ public class SWEEPPIDController {
   private double lastTime, lastError;
 
   // The runtime instance from the main op-mode
-  private ElapsedTime runtime;
+  private Timer runtime;
   private boolean shouldWrap = true;
 
   private double minWrap = 0.0, maxWrap = 0.0;
@@ -50,7 +51,7 @@ public class SWEEPPIDController {
    * @param dConstant - Derivative Constant - used for tuning the Derivative factor
    * @param runtime - The runtime instance from the main op-mode
    */
-  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, ElapsedTime runtime) {
+  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, Timer runtime) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;
     this.iConstant = iConstant;
@@ -60,9 +61,9 @@ public class SWEEPPIDController {
     iNormal = iConstant;
 
     // to ensure lastTime is correct for the first iteration of update.
-    lastTime = runtime.time();
+    lastTime = runtime.getSeconds();
   }
-  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, ElapsedTime runtime, boolean shouldWrap) {
+  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, Timer runtime, boolean shouldWrap) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;
     this.iConstant = iConstant;
@@ -72,7 +73,7 @@ public class SWEEPPIDController {
     iNormal = iConstant;
 
     // to ensure lastTime is correct for the first iteration of update.
-    lastTime = runtime.time();
+    lastTime = runtime.getSeconds();
   }
 
   public void updatePIDConstants(double pConstant, double iConstant, double dConstant){
@@ -87,7 +88,7 @@ public class SWEEPPIDController {
    *                        this is a sensor output that is used to calculate the new error
    */
   public void update(double currentPosition) {
-     double deltaTime = (runtime.time()-lastTime);
+     double deltaTime = (runtime.getSeconds()-lastTime);
     // the error of how far you are from where you want to be
     // added wrap to the error equation
     double error = currentPosition - target;

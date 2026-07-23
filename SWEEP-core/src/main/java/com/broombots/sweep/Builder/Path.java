@@ -20,10 +20,6 @@ public class Path {
     private final RobotMovementParameters robotParams;
     // The actions that can be executed during the path, based on the position of the robot.
     private final ArrayList<SWEEPAction> actions;
-    //The index of the current segment that the robot is on. This is used to optimize the search for the current segment.
-    private int currentSegmentIndex = 0;
-
-    private final double startTime, endTime;
 
     // The action that is currently being executed. This is used to determine if the action has completed and if the next action should be executed.
     private SWEEPAction activeAction;
@@ -34,15 +30,13 @@ public class Path {
      * @param robotParams the parameters of the robots drivetrain and how to can move. Used by this class to apply velocity data to motor powers
      * @param actions The actions that can be executed during the path.
      */
-    public Path(MovementMap compiledPath, RobotMovementParameters robotParams, SWEEPAction[] actions, double startTime, double endTime){
+    public Path(MovementMap compiledPath, RobotMovementParameters robotParams, SWEEPAction[] actions){
         if (compiledPath == null) throw new IllegalArgumentException("null path given");
         if (robotParams == null) throw new IllegalArgumentException("null robot parameters given");
         if (actions == null) throw new IllegalArgumentException("null action array given");
         this.compiledPath = compiledPath;
         this.robotParams = robotParams;
         this.actions = new ArrayList<>();
-        this.startTime = startTime;
-        this.endTime = endTime;
         Collections.addAll(this.actions, actions);
     }
 
@@ -66,43 +60,26 @@ public class Path {
             activeAction.execute();
         }
     }
+    public String updateActionsInSimulation(LocalizationPacket packet){
+        if (activeAction != null){
+            if (activeAction.completion()) {
+                activeAction = null;
+            }else{
+            }
+        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet)){
+            if (actions.isEmpty()) return "";
+            activeAction = actions.get(0);
+            actions.remove(0);
+            return activeAction.getClass().toString();
+        }
+        return "";
+    }
 
-    /**
-     * Gets the total time of the path by subtracting the start time from the end time.
-     * @return The total time of the path.
-     */
-    public double getTotalTime(){
-        return getEndTime() - getStartTime();
-    }
-    /**
-     * Gets the end time of the path by getting the end time of the last segment.
-     * @return The end time of the path.
-     */
-    public double getEndTime(){
-        return 0;
-    }
-    /**
-     * Gets the start time of the path by getting the start time of the first segment.
-     * @return The start time of the path.
-     */
-    public double getStartTime(){
-        return 0;
-    }
-    /**
-     * Gets the position of the robot at a specific time.
-     * @param time The time at which to get the position.
-     * @return The position of the robot at the specified time.
-     */
     public Coordinate getPosition(double time){
-        return new Coordinate(0,0,0);
+        return getMovement(time).getPosition();
     }
-    /**
-     * Gets the velocity of the robot at a specific time.
-     * @param time The time at which to get the velocity.
-     * @return The velocity of the robot at the specified time.
-     */
-    public double[] getVelocity(double time){
-        return new double[]{0,0};
+    public MovementPoint getMovement(double time){
+        return new MovementPoint(new Coordinate(0,0,0),0,0,0,0,0,0);
     }
 
 }

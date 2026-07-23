@@ -54,5 +54,4 @@ public class FollowSplineSegment implements Segment {
 		timeUnit = Math.max(timeUnit, 0);
 		return timeUnit;
 	}
-
 }

@@ -1,0 +1,26 @@
+
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace = 'com.broombots.sweep'
+    compileSdkVersion 30
+
+    defaultConfig {
+        minSdkVersion 24
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 28
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+apply from: '../build.dependencies.gradle'
+
+dependencies {
+    implementation("org.ejml:ejml-all:0.44.0")
+}
