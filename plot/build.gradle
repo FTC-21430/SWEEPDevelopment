@@ -14,7 +14,7 @@ dependencies {
 }
 
 tasks.named('compileJava') {
-    dependsOn(':SWEEP:assembleRelease')
+    dependsOn(':SWEEP-core:assembleRelease')
 }
 
 java {

@@ -6,6 +6,7 @@ import com.broombots.sweep.Splines.Segment;
 
 public class MotionProfileProcessor {
     private RobotMovementParameters movementParameters;
+    private DistanceMap distanceMap;
 
     public MotionProfileProcessor(RobotMovementParameters movementParameters) {
         // Initialize the motion profile processor with the given movement parameters
@@ -19,6 +20,10 @@ public class MotionProfileProcessor {
 
     public MovementMap processPath(Segment[] segments, double sampleRate) {
         MovementMap movementMap = new MovementMap(sampleRate);
+
+        distanceMap = new DistanceMap(segments);
+
+
         return movementMap;
     }
 
@@ -29,7 +34,7 @@ public class MotionProfileProcessor {
     private void compileVelocityProfile(Segment segment) {
         double[] maxCurvePoints = findMaxCurvePoints(segment);
         //Algorithm steps
-        // 1. convert to be in terms of distance
+        // 1. convert to be in terms of distance - DONE
         // 2. Find the max curve points of the segment
         // 3. Use the curve of those points to determine the max robot velocity at that curve ( and therefore the slowest theoretically in the spline the robot could move at)
         // 4. Simulate at a sample rate of distance, the fastest the robot would be able to accelerate from each of those distances
