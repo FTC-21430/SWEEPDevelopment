@@ -40,4 +40,7 @@ public class MovementPoint {
     public double getAccelAngle() {
         return accelAngle;
     }
+    public double getVelocityMagnitude(){
+        return Math.hypot(velX,velY);
+    }
 }

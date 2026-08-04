@@ -2,6 +2,8 @@ package com.broombots.sweep.Splines;
 
 import com.broombots.sweep.Classes.Coordinate;
 
+import org.ejml.simple.SimpleMatrix;
+
 /**
  * Represents a time-bounded motion segment that can report pose and velocity over absolute time.
  */
@@ -27,4 +29,10 @@ public interface Segment {
 		return Coordinate.getDistanceBetweenCoordinates(start, end);
 	}
 	double getSpeedRate();
+	/**
+	 * ax, bx, cx, dx,
+	 * ay, by, cy, dy
+	 */
+	SimpleMatrix getSplineFormula();
+
 }

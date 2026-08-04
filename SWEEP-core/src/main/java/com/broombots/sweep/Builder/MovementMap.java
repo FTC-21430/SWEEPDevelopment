@@ -15,6 +15,9 @@ public class MovementMap {
     public void addMovementPoint(MovementPoint movementPoint){
         movementMap.add(movementPoint);
     }
+    public void addMovementPoints(ArrayList<MovementPoint> points){
+        movementMap.addAll(points);
+    }
     public MovementPoint getPoint(double time){
         // round time into the nearest integer value that aligns with the index of the last exact movement point
         int idxFloor = (int)(time/sampleRate);
@@ -27,6 +30,19 @@ public class MovementMap {
         else {
             return movementMap.get(movementMap.size()-1);
         }
+    }
+    public double getSampleRate(){
+        return sampleRate;
+    }
+    public static MovementMap combine(MovementMap first, MovementMap second){
+        if (first.sampleRate != second.sampleRate) throw new RuntimeException("MovementMap sample rates do not match");
+        MovementMap result = new MovementMap(first.getSampleRate());
+        result.addMovementPoints(first.getAllPoints());
+        result.addMovementPoints(second.getAllPoints());
+        return result;
+    }
+    public ArrayList<MovementPoint> getAllPoints(){
+        return movementMap;
     }
     private MovementPoint lerpMovementPoint(MovementPoint startPoint, MovementPoint endPoint, double x){
         double posX = lerp(startPoint.getPosition().getX(), endPoint.getPosition().getX(), x);
@@ -45,4 +61,5 @@ public class MovementMap {
         double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
         return start + (start-end) * xInRange;
     }
+
 }
