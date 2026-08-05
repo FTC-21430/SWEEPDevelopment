@@ -6,15 +6,15 @@ import com.broombots.sweep.Splines.Segment;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class DistanceMap {
-    ArrayList<Coordinate> coordinates =new ArrayList<>();
-    ArrayList<Double> distances = new ArrayList<>();
-    ArrayList<Double> curvatures = new ArrayList<>();
+    private ArrayList<Coordinate> coordinates =new ArrayList<>();
+    private ArrayList<Double> distances = new ArrayList<>();
+    private ArrayList<Double> curvatures = new ArrayList<>();
 
     ArrayList<Double> segmentSplitDistances = new ArrayList<>();
     private final double tSampleRate = 0.01;
-    private final double maxDistance;
     public DistanceMap(Segment[] segments){
         double segmentDistance = 0;
         for (Segment seg : segments){
@@ -22,10 +22,13 @@ public class DistanceMap {
             segmentDistance = getMaxDistance();
             segmentSplitDistances.add(segmentDistance);
         }
-        maxDistance = segmentDistance;
+    }
+    public DistanceMap(Segment segment){
+        addSegmentToMap(segment, 0);
+        segmentSplitDistances.add(getMaxDistance());
     }
     public double getMaxDistance(){ // return end of distance array
-        return maxDistance;
+        return distances.get(distances.size()-1);
     }
     public Coordinate getPositionAtDistance(double distance){
         if (isDistanceCalculated(distance)) return coordinates.get(distances.indexOf(distance));
@@ -57,6 +60,14 @@ public class DistanceMap {
                     segmentSplitDistances.get(idx)
             };
         }
+    }
+    public double[] getSegmentMaxCurvaturePoints(){
+        ArrayList<Double> curvatureArray = new ArrayList<>(curvatures); // makes shallow list copy that can be sorted because double is an immutable type
+        curvatureArray.sort(Comparator.naturalOrder());
+        return new double[]{
+            distances.get(curvatures.indexOf(curvatureArray.get(curvatureArray.size()-2))),
+            distances.get(curvatures.indexOf(curvatureArray.get(curvatureArray.size()-1)))
+        };
     }
     private void addSegmentToMap(Segment segment, double startDistance){
         for (double t = 0; t <= 1; t += tSampleRate){

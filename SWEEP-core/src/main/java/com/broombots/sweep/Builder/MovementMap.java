@@ -18,14 +18,14 @@ public class MovementMap {
     public void addMovementPoints(ArrayList<MovementPoint> points){
         movementMap.addAll(points);
     }
-    public MovementPoint getPoint(double time){
-        // round time into the nearest integer value that aligns with the index of the last exact movement point
-        int idxFloor = (int)(time/sampleRate);
-        // check if there is another point after this time, which there should be
+    public MovementPoint getPoint(double unit){
+        // round unit into the nearest integer value that aligns with the index of the last exact movement point
+        int idxFloor = (int)(unit/sampleRate);
+        // check if there is another point after this unit, which there should be
         if (idxFloor < movementMap.size()-1){
             MovementPoint lastPoint = movementMap.get(idxFloor);
             MovementPoint nextPoint = movementMap.get(idxFloor+1);
-            return lerpMovementPoint(lastPoint,nextPoint, (time/sampleRate) - (double)idxFloor);
+            return lerpMovementPoint(lastPoint,nextPoint, (unit/sampleRate) - (double)idxFloor);
         }
         else {
             return movementMap.get(movementMap.size()-1);
