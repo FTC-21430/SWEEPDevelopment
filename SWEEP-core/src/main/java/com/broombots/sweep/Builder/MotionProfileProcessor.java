@@ -1,18 +1,14 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.CatmullRomCubic;
 import com.broombots.sweep.Classes.Coordinate;
 import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Splines.Segment;
-import com.google.gson.internal.bind.JsonAdapterAnnotationTypeAdapterFactory;
-
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 
 public class MotionProfileProcessor {
     private RobotMovementParameters movementParameters;
-    private DistanceMap distanceMap;
-    private double curvatureEffect = 20; //TODO Tune this value in
+    private final double curvatureEffect = 20; //TODO Tune this value in
 
     public MotionProfileProcessor(RobotMovementParameters movementParameters) {
         // Initialize the motion profile processor with the given movement parameters
@@ -28,13 +24,20 @@ public class MotionProfileProcessor {
         MovementMap movementMap = new MovementMap(sampleRate);
         MovementPoint lastPoint = startingPoint;
         for (int i = 0; i < segments.length; i++){
-            MovementMap.combine(movementMap, compileVelocityProfile(segments[i], lastPoint));
+            movementMap = MovementMap.combine(movementMap, compileVelocityProfile(segments[i], lastPoint, sampleRate));
             lastPoint = movementMap.getAllPoints().get(movementMap.getAllPoints().size()-1);
         }
         return movementMap;
     }
     private MovementMap compileVelocityProfile(Segment segment, MovementPoint startingPoint, double sampleRate) {
-        distanceMap = new DistanceMap(segment);
+        //Algorithm steps
+        // 1. convert to be in terms of distance - DONE
+        // 2. get the max points of curvature.
+        // 3. Use the curve of those points to determine the max robot velocity at that curve ( and therefore the slowest theoretically in the spline the robot could move at)
+        // 4. Simulate at a sample rate of distance, the fastest the robot would be able to accelerate from each of those distances
+        // 5. Compute full velocity profile by comparing each simulation and taking the lowest velocity at each point
+        // 7. return that MovementMap which is the velocity profile.
+        DistanceMap distanceMap = new DistanceMap(segment);
         double startingDistance = 0;
         double endingDistance = distanceMap.getMaxDistance();
         MovementMap idealMap = calculateIdealMovementMap(distanceMap, segment.getSpeedRate(),sampleRate);
@@ -57,27 +60,31 @@ public class MotionProfileProcessor {
                 lastPoint = idealMap.getPoint(point);
             }
             //forward pass
+            ArrayList<MovementPoint> forwardPass = new ArrayList<>();
             while (currentDistance <= endingDistance){
-                MovementPoint basicResult = simulateStep(sampleRate,currentDistance,)
-                currentDistance += sampleRate;
+                MovementPoint basicResult = simulateStep(sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
+                forwardPass.add(lastPoint);
+                lastPoint = basicResult;
             }
             // backward pass
+            ArrayList<MovementPoint> backPass = new ArrayList<>();
+            currentDistance = point-sampleRate;
+            while (currentDistance >= startingDistance){
+                MovementPoint basicResult = simulateStep(-sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
+                backPass.add(lastPoint);
+                lastPoint = basicResult;
+            }
+            Collections.reverse(backPass);
+            simulation.addMovementPoints(backPass);
+            simulation.addMovementPoints(forwardPass);
         }
-
-        //Algorithm steps
-        // 1. convert to be in terms of distance - DONE
-        // 2. get the max points of curvature.
-        // 3. Use the curve of those points to determine the max robot velocity at that curve ( and therefore the slowest theoretically in the spline the robot could move at)
-        // 4. Simulate at a sample rate of distance, the fastest the robot would be able to accelerate from each of those distances
-        // 5. Compute full velocity profile by comparing each simulation and taking the lowest velocity at each point
-        // 6. iterate through the velocity profile to get a full movementmap that represents the segment
-        // 7. return that MovementMap which is the velocity profile.
+        return MovementMap.getMinimum(simulations.toArray(new MovementMap[0]));
     }
-
-
     private MovementMap calculateIdealMovementMap(DistanceMap distanceMap, double segmentSpeedRatio, double sampleRate){
         MovementMap resultingIdealMap = new MovementMap(sampleRate);
-        double startDistance = distanceMap.getDistanceBoundsForSegmentIndex(0)[0];
+        double startDistance = distanceMap.getMinDistance();
         double endDistance = distanceMap.getDistanceBoundsForSegmentIndex(0)[1];
         Coordinate lastPoint = distanceMap.getPositionAtDistance(startDistance);
         for (double p = startDistance + sampleRate; p < endDistance; p += sampleRate) {
@@ -96,6 +103,7 @@ public class MotionProfileProcessor {
         }
         return resultingIdealMap;
     }
+    // Unused for now, may be helpful when we test as an iteration.
     private ArrayList<Integer> getSlowPoints(MovementMap idealMap, double sampleRate){
         ArrayList<MovementPoint> points = idealMap.getAllPoints();
         ArrayList<Integer> allSlowIndex = new ArrayList<>();
@@ -148,8 +156,8 @@ public class MotionProfileProcessor {
         // Calculate velocity deltas and position displacement using average velocity
         double deltaVelocityX = finalVelocityX - point.getVelX();
         double deltaVelocityY = finalVelocityY - point.getVelY();
-        double finalX = step * (point.getVelX() + (1.0/2.0) * deltaVelocityX);
-        double finalY = step * (point.getVelY() + (1.0/2.0) * deltaVelocityY);
+        double finalX = point.getPosition().getX() + step * (point.getVelX() + (1.0/2.0) * deltaVelocityX);
+        double finalY = point.getPosition().getY() + step * (point.getVelY() + (1.0/2.0) * deltaVelocityY);
         double finalAccelerationX = deltaVelocityX / absStep;
         double finalAccelerationY = deltaVelocityY / absStep;
         
@@ -168,12 +176,12 @@ public class MotionProfileProcessor {
         
         // Calculate angular displacement using average angular velocity
         double deltaVelocityAngle = finalVelocityAngle - currentAngularVelocity;
-        double finalAngle = step * (currentAngularVelocity + (1.0/2.0) * deltaVelocityAngle);
+        double finalAngle = point.getPosition().getAngle() + step * (currentAngularVelocity + (1.0/2.0) * deltaVelocityAngle);
         double finalAccelerationAngle = deltaVelocityAngle / absStep;
         
         // ==== CREATE NEW MOVEMENT POINT ====
         MovementPoint newPoint = new MovementPoint(
-                new Coordinate(finalX, finalY),
+                new Coordinate(finalX, finalY, finalAngle),
                 finalVelocityX,
                 finalVelocityY,
                 finalVelocityAngle,

@@ -30,6 +30,9 @@ public class DistanceMap {
     public double getMaxDistance(){ // return end of distance array
         return distances.get(distances.size()-1);
     }
+    public double getMinDistance(){
+        return distances.get(0);
+    }
     public Coordinate getPositionAtDistance(double distance){
         if (isDistanceCalculated(distance)) return coordinates.get(distances.indexOf(distance));
         Double[] closestDistances = closestDistancesTo(distance);
