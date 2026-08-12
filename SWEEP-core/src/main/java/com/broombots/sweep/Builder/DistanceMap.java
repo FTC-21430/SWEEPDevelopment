@@ -87,7 +87,7 @@ public class DistanceMap {
     }
     private Double[] closestDistancesTo(double distance){
         if (isDistanceCalculated(distance)) return new Double[]{distance};
-        ArrayList<Double> search = distances; // TODO: check for pointer in the copy, we need a copy, not a pointer.
+        ArrayList<Double> search = new ArrayList<>(distances);
         int elements = search.size();
 
         while (elements > 2){
@@ -106,8 +106,15 @@ public class DistanceMap {
        return search.toArray(new Double[0]);
     }
     private Double[] closestCurvaturesTo(double distance){
+        // TODO: this searches `curvatures` for values bracketing `distance`, but distance is a distance
+        // value while `curvatures` holds curvature values -- these are different units/domains. The
+        // binary search below (`distance >= search.get(elements/2)`) is comparing a distance against a
+        // curvature, which only works if curvatures happen to be monotonic in distance (they aren't in
+        // general, e.g. curvature can go up-down-up along a curve). getCurvatureAtDistance() likely needs
+        // to search `distances` for the bracket (same as closestDistancesTo) and then read the
+        // corresponding curvature values, rather than binary-searching `curvatures` directly.
         if (isDistanceCalculated(distance)) return new Double[]{distance};
-        ArrayList<Double> search = curvatures; // TODO: check for pointer in the copy, we need a copy, not a pointer.
+        ArrayList<Double> search = new ArrayList<>(curvatures);
         int elements = search.size();
 
         while (elements > 2){
@@ -129,7 +136,7 @@ public class DistanceMap {
 
     private double lerp(double start, double end, double x){
         double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
-        return start + (start-end) * xInRange;
+        return start + (end-start) * xInRange;
     }
     private Coordinate lerpCoordinate(Coordinate start, Coordinate end, double x){
         return new Coordinate(

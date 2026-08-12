@@ -6,6 +6,8 @@ import com.broombots.sweep.Classes.Waypoint;
 import com.broombots.sweep.Splines.Segment;
 import com.broombots.sweep.Splines.SplineWaypoint;
 
+import org.ejml.simple.SimpleMatrix;
+
 public class AngledSplineSegment implements Segment {
     CatmullRomCubic xCubic;
     CatmullRomCubic yCubic;
@@ -20,6 +22,14 @@ public class AngledSplineSegment implements Segment {
         xCubic = new CatmullRomCubic(p1.getX(), p2.getX(), p3.getX(), p4.getX());
         yCubic = new CatmullRomCubic(p1.getY(), p2.getY(), p3.getY(), p4.getY());
         angleCubic = new CatmullRomCubic(p1.getAngle(), p2.getAngle(), p3.getAngle(), p4.getAngle());
+        // TODO: forcing speed=0 here caps segment.getSpeedRate() -> calculateIdealMovementMap's
+        // segmentSpeedRatio to 0 for the ENTIRE segment (maxVelocity = ... * segmentSpeedRatio * ...
+        // at every sampled distance, not just near the end), which plans the whole segment leading
+        // into a BREAK/WAIT at zero velocity instead of only decelerating near the stop. Now that
+        // MotionProfileProcessor.compileVelocityProfile has a comeToStop boundary condition that
+        // backward-simulates a proper decel-to-zero at the segment's true end, this blanket zero
+        // is likely redundant with (and conflicts with) that mechanism -- revisit whether this
+        // override should be removed once comeToStop is fully wired through processPath.
         if (p4.getType() == Waypoint.WaypointType.BREAK || p4.getType() == Waypoint.WaypointType.WAIT){
             speed = 0;
         }else{
@@ -53,5 +63,9 @@ public class AngledSplineSegment implements Segment {
         timeUnit = Math.min(timeUnit, 1);
         timeUnit = Math.max(timeUnit, 0);
         return timeUnit;
+    }
+    @Override
+    public SimpleMatrix getSplineFormula(){
+        return xCubic.getCoeffs().combine(1,0, yCubic.getCoeffs());
     }
 }

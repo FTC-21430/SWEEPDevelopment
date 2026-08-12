@@ -24,6 +24,9 @@ public class CatmullRomCubic {
         double c = coeffs.get(0, 2);
         return 3 * a * Math.pow(t,2) + 2 * b * t + c;
     }
+    public SimpleMatrix getCoeffs(){
+        return coeffs;
+    }
     /**
      * Compute uniform Catmull-Rom coefficients [a, b, c, d] for a single scalar dimension,
      * returned as a 1x4 SimpleMatrix so CubicPolynomial can unpack them directly.

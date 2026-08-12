@@ -3,6 +3,8 @@ package com.broombots.sweep.Splines.Segments;
 import com.broombots.sweep.Classes.Coordinate;
 import com.broombots.sweep.Splines.Segment;
 
+import org.ejml.simple.SimpleMatrix;
+
 /**
  * Segment implementation that holds a fixed pose for a configured time window.
  */
@@ -41,5 +43,16 @@ public class WaitSegment implements Segment {
 	@Override
 	public double getSpeedRate(){
 		return 0;
+	}
+	@Override
+	public SimpleMatrix getSplineFormula(){
+		return new SimpleMatrix(new double[][]{
+				{
+					0, 0, 0, position.getX()
+				},
+				{
+					0 ,0, 0, position.getY()
+				}
+		});
 	}
 }

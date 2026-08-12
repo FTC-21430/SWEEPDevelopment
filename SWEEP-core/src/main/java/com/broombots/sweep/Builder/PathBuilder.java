@@ -1,6 +1,7 @@
 package com.broombots.sweep.Builder;
 
 import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Classes.SWEEPAction;
 import com.broombots.sweep.Classes.Waypoint;
 import com.broombots.sweep.Splines.EndWaypoint;
@@ -47,11 +48,24 @@ public class PathBuilder {
      */
     private Coordinate previousCoordinate;
     /**
+     * The rate at which a path will be simulated and evaluated. Lower numbers means more accuracy with a tradeoff for slower processing times mainly during path rendering.
+     * Default value is 0.01
+     */
+    private double sampleRate = 0.01;
+    private RobotMovementParameters movementParameters;
+    private MovementPoint startingPoint;
+    /**
      * Constructs a new PathBuilder object.
      * Initializes the waypoints and actions arrays, and sets the previous coordinate to (0,0,0).
+     * @param movementParameters the definitions of the physical movement capabilities of the robot that will follow this path.
      */
-    public PathBuilder(){
+    public PathBuilder(RobotMovementParameters movementParameters){
         previousCoordinate = new Coordinate(0,0);
+        this.movementParameters = movementParameters;
+    }
+    public PathBuilder setSampleRate(double sampleRate){
+        this.sampleRate = sampleRate;
+        return this;
     }
 
     /**
@@ -153,8 +167,13 @@ public class PathBuilder {
      * @return The current PathBuilder instance, allowing for method chaining.
      */
     public PathBuilder start(double x, double y, double angle){
-        waypoints.add(new StartWaypoint(x,y,angle));
-        previousCoordinate = new Coordinate(x,y,angle);
+        start(new MovementPoint(new Coordinate(x,y,angle),0,0,0,0,0,0));
+        return this;
+    }
+    public PathBuilder start(MovementPoint startingPoint){
+        waypoints.add(new StartWaypoint(startingPoint.getPosition().getX(), startingPoint.getPosition().getY(), startingPoint.getPosition().getAngle()));
+        previousCoordinate = new Coordinate(startingPoint.getPosition().getX(), startingPoint.getPosition().getY(), startingPoint.getPosition().getAngle());
+        this.startingPoint = startingPoint;
         return this;
     }
     /**
@@ -219,6 +238,8 @@ public class PathBuilder {
             throw new RuntimeException("First Waypoint must be type START");
         if (waypoints.get(waypoints.size() - 1).getType() != Waypoint.WaypointType.END)
             throw new RuntimeException("Last Waypoint must be type END");
+        if (movementParameters == null) throw new RuntimeException("Robot movement parameters must be defined");
+        if (sampleRate <= 10e-9) throw new RuntimeException("SampleRate must be a positive, non negative number that is not lost in floating point rounding");
 
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
@@ -227,8 +248,8 @@ public class PathBuilder {
             segments.add(segment);
         }
 
-        // TODO: Simulate through the whole path and make the velocity map forward, and backward
-        return null;
+        MotionProfileProcessor profileProcessor = new MotionProfileProcessor(movementParameters);
+        return new Path(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint),actions.toArray(new SWEEPAction[0]));
     }
     /**
      * Creates a new segment based on the waypoint type at the specified index.
@@ -246,6 +267,10 @@ public class PathBuilder {
                 return new FollowSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
             case SPLINE_ANGLE:
                 return new AngledSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
+            case END:
+                return new WaitSegment(waypoint.getCoordinate(), 0.1);
+            case BREAK:
+                return  new WaitSegment(waypoint.getCoordinate(), 0.05);
             //TODO: Add more cases for new waypoint types as they are created
             //IDEA: Segment that forces the robot to always look at a specified coordinate on the field, with a linear and cubic spline version
         }
