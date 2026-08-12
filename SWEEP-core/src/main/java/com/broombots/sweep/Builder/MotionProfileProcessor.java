@@ -22,49 +22,34 @@ public class MotionProfileProcessor {
         this.movementParameters = movementParameters;
     }
 
-    public MovementMap processPath(Segment[] segments, double sampleRate, MovementPoint startingPoint) {
-        return processPath(segments, sampleRate, sampleRate, startingPoint);
-    }
-
     /**
      * Compiles the full path into a finalized, time-indexed MovementMap that the robot can
      * actually follow. Segments are first compiled and combined in distance-space (using
      * distanceSampleRate), then rendered through time (using timeSampleRate) so that the
      * returned MovementMap's unit is seconds rather than distance.
      * @param segments the path segments to compile, in order
-     * @param distanceSampleRate the distance step used while compiling and combining each segment's velocity profile
-     * @param timeSampleRate the time step, in seconds, of the final rendered MovementMap
+     * @param sampleRate the resolution that the path will be sampled and rendered. (both distance steps and time steps use the same value)
      * @param startingPoint the MovementPoint the robot starts at
      * @return the finalized MovementMap, indexed by time (seconds)
      */
-    public MovementMap processPath(Segment[] segments, double distanceSampleRate, double timeSampleRate, MovementPoint startingPoint) {
-        if (distanceSampleRate <= 0.0) throw new IllegalArgumentException("distanceSampleRate must be positive");
-        if (timeSampleRate <= 0.0) throw new IllegalArgumentException("timeSampleRate must be positive");
-        MovementMap movementMap = new MovementMap(distanceSampleRate);
+    public MovementMap processPath(Segment[] segments, double sampleRate, MovementPoint startingPoint) {
+        if (sampleRate <= 0.0) throw new IllegalArgumentException("SampleRate must be positive");
+        MovementMap movementMap = new MovementMap(sampleRate);
         MovementPoint lastPoint = startingPoint;
         for (int i = 0; i < segments.length; i++){
             Segment segment = segments[i];
-            // TODO: compileVelocityProfile now takes a 4th "comeToStop" boolean param (added below) but
-            // this call site only passes 3 args -- will not compile until this is wired up. comeToStop
-            // should presumably be true when segment is the last one before a BREAK/WAIT/END so the
-            // backward pass seeds its terminal MovementPoint at zero velocity (see compileVelocityProfile TODO).
-            // TODO: movementMap starts as a distanceSampleRate-keyed map (line 43), but here it's being
-            // combined with a MovementMap that has ALREADY been rendered through time (timeSampleRate).
-            // MovementMap.combine() requires matching sample rates -- this will throw at runtime unless
-            // distanceSampleRate == timeSampleRate. Decide whether per-segment time-rendering should happen
-            // here (per segment) or once at the end (line 56) -- doing both/mixed is not consistent.
             if (segment instanceof WaitSegment){
                 WaitSegment waitSegment = (WaitSegment) segment;
                 movementMap.addWaitPeriod(waitSegment.getPosition(0),waitSegment.getDuration());
             }else{
-                movementMap = MovementMap.combine(movementMap, renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, distanceSampleRate),timeSampleRate));
+                // We cqn skip the check for if there is going to be another segment after current because PathBuilder ensures that all valid paths end with an end (wait) segment.
+                boolean shouldComeToStop = segments[i+1] instanceof WaitSegment;
+                //
+                movementMap = MovementMap.combine(movementMap, renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, sampleRate, shouldComeToStop),sampleRate));
                 lastPoint = movementMap.getAllPoints().get(movementMap.getAllPoints().size()-1);
             }
-
         }
-        // TODO: this renders the whole combined map through time again, but per-segment maps above were
-        // already time-rendered individually -- double-check this doesn't double-apply the render step.
-        return renderMovementMapThroughTime(movementMap, timeSampleRate);
+        return movementMap;
     }
     private MovementMap compileVelocityProfile(Segment segment, MovementPoint startingPoint, double sampleRate, boolean comeToStop) {
         //Algorithm steps
@@ -88,27 +73,21 @@ public class MotionProfileProcessor {
         ArrayList<VelocityMap> simulations = new ArrayList<>();
         for (double point : simulationPoints){
             double currentDistance = point;
-            // TODO: endPoint here is always idealMap.getPoint(endingDistance), even when comeToStop forces
-            // the actual terminal velocity to zero below (line ~95). VelocityMap.normalizeVelocityProfile()
-            // splices startPoint/endPoint onto every envelope's raw profile regardless of anchor "point",
-            // so this can glue an inconsistent (nonzero) endpoint sample onto the correctly zero-velocity
-            // backward-simulated profile. When comeToStop is true, endPoint passed here should also be the
-            // zero-velocity MovementPoint, not idealMap's.
             VelocityMap currentProfile = new VelocityMap(point, sampleRate, startingPoint, idealMap.getPoint(endingDistance));
 
             MovementPoint lastPoint;
-            if (comeToStop && point == simulationPoints[simulationPoints.length-1]){
-                lastPoint = new MovementPoint(idealMap.getPoint(point).getPosition(),0,0,0,0,0,0);
+            if (point == simulationPoints[0]){
+                lastPoint = startingPoint;
             }else{
-                if (point == simulationPoints[0]){
-                    lastPoint = startingPoint;
-                }else{
-                    lastPoint = idealMap.getPoint(point);
-                }
+                lastPoint = idealMap.getPoint(point);
             }
-
             while (currentDistance <= endingDistance){
-                MovementPoint basicResult = simulateStep(sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                MovementPoint basicResult;
+                if (comeToStop && currentDistance == endingDistance){
+                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, new MovementPoint(distanceMap.getPositionAtDistance(currentDistance),0,0,0,0,0,0), idealMap);
+                }else{
+                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                }
                 currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
                 currentProfile.addForwardPoint(lastPoint);
                 lastPoint = basicResult;
@@ -116,7 +95,13 @@ public class MotionProfileProcessor {
             // backward pass
             currentDistance = point-sampleRate;
             while (currentDistance >= startingDistance){
-                MovementPoint basicResult = simulateStep(-sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                MovementPoint basicResult;
+                if (comeToStop && currentDistance == endingDistance){
+                    basicResult = simulateStep(-sampleRate,currentDistance,distanceMap, new MovementPoint(distanceMap.getPositionAtDistance(currentDistance),0,0,0,0,0,0), idealMap);
+                }else{
+                    basicResult = simulateStep(-sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+                }
+
                 currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
                 currentProfile.addBackPassPoint(lastPoint);
                 lastPoint = basicResult;
@@ -158,7 +143,6 @@ public class MotionProfileProcessor {
             timeProfile.addMovementPoint(nextPoint);
             currentPoint = nextPoint;
         }
-
         return timeProfile;
     }
 
@@ -189,14 +173,6 @@ public class MotionProfileProcessor {
         double endDistance = distanceMap.getDistanceBoundsForSegmentIndex(0)[1];
         Coordinate lastPoint = distanceMap.getPositionAtDistance(startDistance);
         for (double p = startDistance + sampleRate; p < endDistance; p += sampleRate) {
-            // TODO: lastPoint is never reassigned at the end of this loop, so headingDegrees is always
-            // computed relative to the SEGMENT START pose instead of the previous sample. On any curved
-            // segment this heading reference drifts further wrong the closer p gets to endDistance, which
-            // corrupts maxVelocity's direction-dependent scaling (via getMaxVelocity(direction)) for the
-            // back half of the segment. Since this ideal map is the ceiling every forward/backward
-            // simulation pass clamps against (see simulateStep), this bug propagates into the final
-            // velocity profile. Fix: add `lastPoint = distanceMap.getPositionAtDistance(p);` at the
-            // bottom of this loop body.
             double headingDegrees = getHeadingToCoordinate(lastPoint, distanceMap.getPositionAtDistance(p));
             double maxVelocity = movementParameters.getMaxVelocity(headingDegrees) * segmentSpeedRatio * curvatureEffect / (distanceMap.getCurvatureAtDistance(p)+1);
             resultingIdealMap.addMovementPoint(
@@ -209,6 +185,7 @@ public class MotionProfileProcessor {
                     0,
                     0
                 ));
+            lastPoint = distanceMap.getPositionAtDistance(p);
         }
         return resultingIdealMap;
     }
