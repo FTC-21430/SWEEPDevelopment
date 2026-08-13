@@ -36,6 +36,9 @@ public class MovementMap {
     public double getSampleRate(){
         return sampleRate;
     }
+    public double getMaxKey(){
+        return sampleRate * (movementMap.size()-1);
+    }
     public static MovementMap combine(MovementMap first, MovementMap second){
         if (Math.abs(first.getSampleRate()- second.getSampleRate())>EPSILON) throw new RuntimeException("MovementMap sample rates do not match");
         MovementMap result = new MovementMap(first.getSampleRate());

@@ -4,8 +4,8 @@ import com.broombots.sweep.Classes.RobotMovementParameters;
 
 public class DefaultRobotMovementParameters implements RobotMovementParameters {
     double robotMass;
-    private final double averageMotorForce = 8.5; // N Per Wheel on ground;
-    private final double robotTopSpeedStraight = 1.5; // m/s
+    private final double averageMotorForce = 3.5; // N Per Wheel on ground;
+    private final double robotTopSpeedStraight = 48; // inches/s
     private final double timeForFullTurn = 1.2; // Seconds
     public DefaultRobotMovementParameters(double robotMass){
         this.robotMass = robotMass;
@@ -16,7 +16,7 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
 
     public double getMaxVelocity(double direction, double angleError){
         // 1.5 m/s for the average robot
-        return (1.5 / 2) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
+        return (robotTopSpeedStraight / 2) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
     }
     public double getAngleVelocity(){
         return 360/timeForFullTurn; // degrees per second
@@ -28,6 +28,12 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
         return 200; // degrees / s^2 Simple values similar to what road runners defaults are. I will tune a basic chassis to this and make those values the default later.
     }
     private double getAverageIndividualWheelAcceleration(){
-        return averageMotorForce / robotMass; // N / Kg = m / s^2
+        double metersAccel = averageMotorForce / robotMass; // N / Kg = m / s^2
+        return metersAccel * (100.0/2.45);
+    }
+
+    @Override
+    public double getAngleFullPowerToErrorThreshold() {
+        return 40;
     }
 }

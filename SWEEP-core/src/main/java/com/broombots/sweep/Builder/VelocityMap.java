@@ -29,40 +29,37 @@ public class VelocityMap {
             map.normalizeVelocityProfile();
             maxDistance = Math.max(maxDistance, map.getMaxDistance());
         }
-
-        // TODO: this picks, independently at each distance sample, whichever envelope (start-anchored,
-        // the two curvature-anchored passes, end-anchored) currently has the lowest velocity magnitude,
-        // and takes that envelope's ENTIRE MovementPoint (position + velocity + acceleration) wholesale.
-        // Each envelope is internally kinematically consistent on its own, but nothing guarantees adjacent
-        // *combined* samples came from the same envelope -- if the winning envelope switches between d and
-        // d+sampleRate, the resulting position/velocity/acceleration can have a seam (small discontinuity)
-        // right where it matters most: entering/exiting curvature-limited zones. Revisit once the ideal-map
-        // (calculateIdealMovementMap) and comeToStop boundary handling are both correct -- may shrink or
-        // disappear once the envelopes agree more closely; if not, consider re-deriving acceleration from
-        // the combined position/velocity samples after this min-selection instead of carrying it over raw.
-        for (double d = 0.0; d <= maxDistance + 1e-9; d += sampleRate){
+        // TODO: increase the sampling rate here
+        for (double d = 0.0; d <= maxDistance + 1e-9; d += sampleRate*100){
             MovementPoint smallestPoint = velocityMaps[0].getPointAtDistance(d);
             for (int j = 1; j < velocityMaps.length; j++){
                 MovementPoint point = velocityMaps[j].getPointAtDistance(d);
+                System.out.println(point.getVelocityMagnitude());
                 smallestPoint = smallestPoint.getVelocityMagnitude() > point.getVelocityMagnitude()?  point : smallestPoint;
             }
             combined.addMovementPoint(smallestPoint);
         }
 
-        return combined;
+        // Everything up till this points seems to be working correctly
+
+        MovementMap accelerationMap = new MovementMap(sampleRate);
+        for (double d = 0.0; d <= maxDistance - sampleRate + 1e-9; d += sampleRate){
+            MovementPoint rawVelocitySample = combined.getPoint(d);
+            MovementPoint nextRawSample = combined.getPoint(d + sampleRate);
+            double velX = rawVelocitySample.getVelX();
+            double velY = rawVelocitySample.getVelY();
+            double velAngle = rawVelocitySample.getVelAngle();
+            double accelX = (nextRawSample.getVelX()-rawVelocitySample.getAccelX())/sampleRate;
+            double accelY = (nextRawSample.getAccelY()-rawVelocitySample.getAccelY())/sampleRate;
+            double accelAngle = (nextRawSample.getVelAngle()-rawVelocitySample.getAccelAngle())/sampleRate;
+            MovementPoint newPoint = new MovementPoint(new Coordinate(0,0), velX, velY, velAngle, accelX, accelY, accelAngle);
+            accelerationMap.addMovementPoint(newPoint);
+        }
+
+        return accelerationMap;
     }
     void normalizeVelocityProfile() {
         if (samplesRate <= 0.0) throw new IllegalStateException("samplesRate must be positive");
-        // TODO: startPoint/endPoint are spliced onto every envelope's raw profile unconditionally, but the
-        // forward pass (up to endingDistance) and backward pass (down to startingDistance) inside
-        // MotionProfileProcessor.compileVelocityProfile already make each envelope span the FULL segment
-        // range on its own. Splicing the same global start/end point onto all 4 envelopes regardless of
-        // anchor "point" may duplicate or conflict with the naturally-simulated boundary sample already
-        // present in rawVelocityProfile -- double check this doesn't introduce an extra/inconsistent sample
-        // at either end, especially once comeToStop's zero-velocity endPoint (see compileVelocityProfile
-        // TODO) is threaded through correctly.
-        rawVelocityProfile.addFirst(startPoint);
-        rawVelocityProfile.add(endPoint);
         MovementPoint[] raw = rawVelocityProfile.toArray(new MovementPoint[0]);
         if (raw.length == 0) return;
         if (raw.length == 1) {

@@ -8,4 +8,5 @@ public interface RobotMovementParameters {
     // Max Acceleration parameters
     public double getMaxStableAcceleration(double direction, double angleError);
     public double getMaxStableAngularAcceleration(double movementMagnitude, boolean clockwise);
+    public double getAngleFullPowerToErrorThreshold();
 }

@@ -12,21 +12,16 @@ public class DistanceMap {
     private ArrayList<Coordinate> coordinates =new ArrayList<>();
     private ArrayList<Double> distances = new ArrayList<>();
     private ArrayList<Double> curvatures = new ArrayList<>();
-
-    // TODO - Can be a single value, which represents the path length of this segment
-    ArrayList<Double> segmentSplitDistances = new ArrayList<>();
     private final double tSampleRate = 0.01;
     public DistanceMap(Segment[] segments){
         double segmentDistance = 0;
         for (Segment seg : segments){
             addSegmentToMap(seg, segmentDistance);
             segmentDistance = getMaxDistance();
-            segmentSplitDistances.add(segmentDistance);
         }
     }
     public DistanceMap(Segment segment){
         addSegmentToMap(segment, 0);
-        segmentSplitDistances.add(getMaxDistance());
     }
     public double getMaxDistance(){ // return end of distance array
         return distances.get(distances.size()-1);
@@ -50,14 +45,31 @@ public class DistanceMap {
     private double getPartialRatio(double distance, Double[] closestDistances){
         return (distance-closestDistances[0])/(closestDistances[1]-closestDistances[0]);
     }
-    public double[] getSegmentMaxCurvaturePoints(){
-        // TODO - Fix to get 2 local maxima points, not 2 largest points
-        ArrayList<Double> curvatureArray = new ArrayList<>(curvatures); // makes shallow list copy that can be sorted because double is an immutable type
-        curvatureArray.sort(Comparator.naturalOrder());
-        return new double[]{
-            distances.get(curvatures.indexOf(curvatureArray.get(curvatureArray.size()-2))),
-            distances.get(curvatures.indexOf(curvatureArray.get(curvatureArray.size()-1)))
-        };
+    public ArrayList<Double> getSegmentDistancesWithLocalMaximaCurvature(){
+        ArrayList<Double> localMaximaCurvatures = new ArrayList<>(); // makes shallow list copy that can be sorted because double is an immutable type
+        ArrayList<Double> distanceAtLocalMaximas = new ArrayList<>();
+        for (int i = 1; i < curvatures.size()-2; i++){
+            if (Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i-1)) && Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i+1))){
+                localMaximaCurvatures.add(Math.abs(curvatures.get(i)));
+                distanceAtLocalMaximas.add(distances.get(i));
+            }
+        }
+        ArrayList<Double> result = new ArrayList<>();
+        for (int j = 0; j < Math.min(2, localMaximaCurvatures.size()); j++){
+            int bestIdx = 0;
+            for (int i = 1; i < localMaximaCurvatures.size(); i++){
+                if (localMaximaCurvatures.get(i) > localMaximaCurvatures.get(bestIdx)){
+                    bestIdx = i;
+                }
+            }
+            result.add(distanceAtLocalMaximas.get(bestIdx));
+            localMaximaCurvatures.remove(bestIdx);
+            distanceAtLocalMaximas.remove(bestIdx);
+        }
+        while (result.size() < 2){
+            result.add(0.0);
+        }
+        return result;
     }
     private void addSegmentToMap(Segment segment, double startDistance){
         double currentDistance = 0;
@@ -76,23 +88,20 @@ public class DistanceMap {
     }
     private Double[] closestDistancesTo(double distance){
         if (isDistanceCalculated(distance)) return new Double[]{distance};
-        // TODO - Don't remove elements from distances, just add the 2 elements nearest
-        ArrayList<Double> search = new ArrayList<>(distances);
-        int elements = search.size();
+        ArrayList<Double> search = new ArrayList<>();
+        int low = 0;
+        int high = distances.size() - 1;
 
-        while (elements > 2){
-            int mid = elements / 2;
-            if (distance >= search.get(mid)){
-                for (int i = 0; i < mid; i++){
-                    search.remove(0);
-                }
+        while (high - low > 1){
+            int mid = (low+high) / 2;
+            if (distance >= distances.get(mid)){
+                low = mid;
             } else {
-                while (search.size() > mid + 1){
-                    search.remove(search.size() - 1);
-                }
+                high = mid;
             }
-            elements = search.size();
         }
+        search.add(distances.get(low));
+        search.add(distances.get(high));
         return search.toArray(new Double[0]);
     }
     private Double[] closestCurvaturesTo(double distance){
@@ -118,6 +127,8 @@ public class DistanceMap {
     }
 
     // TODO - Graph this so we know what values to expect
+    //Curvature is 1/R with R being the radius of the circle that will best fit the curve. expect values to be greater for tighter curves, and close to zero for straight lines. Range should be about -2, 2 for normal curves on the field,
+    // Play around with curvature and cubic splines in this colab document https://colab.research.google.com/drive/1WzmwwOckUa04UeXFfJ6J6wBxXhSQYZvf?usp=sharing
     private double getCurvature(Segment segment, double t){
         /**
          * ax, bx, cx, dx,
@@ -130,7 +141,7 @@ public class DistanceMap {
         double y2 = 6.0 * f.get(1,0) * t + 2.0 * f.get(1,1); // second derivative of x
 
         double denominator = Math.pow(x1 * x1 + y1 * y1,1.5);
-        if (denominator == 0.0) return 0.0;
+        if (denominator < 10e-9) return 0.0;
         return Math.abs(x1 * y2 - y1 * x2) / denominator;
     }
 }
