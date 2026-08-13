@@ -47,7 +47,9 @@ public class MotionProfileProcessor {
                 // We can skip the check for if there is going to be another segment after current because PathBuilder ensures that all valid paths end with an end (wait) segment.
                 boolean shouldComeToStop = segments[i+1] instanceof WaitSegment;
                 //
-                movementMap = MovementMap.combine(movementMap, renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, sampleRate, shouldComeToStop),sampleRate));
+//                movementMap = MovementMap.combine(movementMap, renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, sampleRate, shouldComeToStop),sampleRate));
+                MovementMap nextMap = renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, sampleRate, shouldComeToStop),sampleRate);
+                movementMap.addMovementPoints(nextMap.getAllPoints());
                 lastPoint = movementMap.getAllPoints().get(movementMap.getAllPoints().size()-1);
             }
             System.out.println("Processed segment " + (i + 1) + " / " + segments.length);
@@ -68,9 +70,11 @@ public class MotionProfileProcessor {
         double endingDistance = distanceMap.getMaxDistance();
         MovementMap idealMap = calculateIdealMovementMap(distanceMap, segment.getSpeedRate(),sampleRate);
         System.out.println("Finished Ideal Map Generation, starting curvature analysis");
+        // TODO - make new method to get distances at the maxCurvature points
         double[] maxCurvature = distanceMap.getSegmentMaxCurvaturePoints();
         double[] simulationPoints = new double[]{
                 startingDistance,
+                // TODO - use distance at these points, not the curvature values themselves
                 maxCurvature[0],
                 maxCurvature[1],
                 endingDistance
@@ -109,7 +113,7 @@ public class MotionProfileProcessor {
                     basicResult = simulateStep(-sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
                 }
 
-                currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
+                currentDistance -= Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
                 currentProfile.addBackPassPoint(lastPoint);
                 lastPoint = basicResult;
             }
@@ -127,15 +131,15 @@ public class MotionProfileProcessor {
      * ideal profile — it simply integrates the acceleration already stored on each point
      * (derived from robot movement parameters during the original simulation passes) forward
      * through time, producing continuous position and velocity samples.
-     * @param distanceProfile the finalized MovementMap indexed by distance
+     * @param velocityProfile the finalized MovementMap indexed by distance
      * @param timeSampleRate the time step, in seconds, of the resulting profile
      * @return a MovementMap whose unit is time (seconds) instead of distance
      */
-    private MovementMap renderMovementMapThroughTime(MovementMap distanceProfile, double timeSampleRate){
-        ArrayList<MovementPoint> distancePoints = distanceProfile.getAllPoints();
+    private MovementMap renderMovementMapThroughTime(MovementMap velocityProfile, double timeSampleRate){
+        ArrayList<MovementPoint> distancePoints = velocityProfile.getAllPoints();
         if (distancePoints.isEmpty()) throw new IllegalArgumentException("distanceProfile is empty");
 
-        double maxDistance = distanceProfile.getSampleRate() * (distancePoints.size() - 1);
+        double maxDistance = velocityProfile.getSampleRate() * (distancePoints.size() - 1);
         MovementMap timeProfile = new MovementMap(timeSampleRate);
 
         MovementPoint currentPoint = distancePoints.get(0);
@@ -143,11 +147,12 @@ public class MotionProfileProcessor {
         timeProfile.addMovementPoint(currentPoint);
 
         while (traveledDistance < maxDistance){
+            // TODO - Don't simulate, just LERP. Simulation can get stuck if vel and acc are zero.
             MovementPoint nextPoint = simulateRenderStep(timeSampleRate, currentPoint);
             traveledDistance += Coordinate.getDistanceBetweenCoordinates(currentPoint.getPosition(), nextPoint.getPosition());
             // Pull the finalized acceleration for the newly reached distance so the render
             // reflects how the path's acceleration profile changes as distance accumulates.
-            MovementPoint distanceLookup = distanceProfile.getPoint(Math.min(traveledDistance, maxDistance));
+            MovementPoint distanceLookup = velocityProfile.getPoint(Math.min(traveledDistance, maxDistance));
             nextPoint.setAcceleration(distanceLookup.getAccelX(), distanceLookup.getAccelY(), distanceLookup.getAccelAngle());
             timeProfile.addMovementPoint(nextPoint);
             currentPoint = nextPoint;
@@ -179,11 +184,17 @@ public class MotionProfileProcessor {
     private MovementMap calculateIdealMovementMap(DistanceMap distanceMap, double segmentSpeedRatio, double sampleRate){
         MovementMap resultingIdealMap = new MovementMap(sampleRate);
         double startDistance = distanceMap.getMinDistance();
-        double endDistance = distanceMap.getDistanceBoundsForSegmentIndex(0)[1];
+        double endDistance = distanceMap.getMaxDistance();
         Coordinate lastPoint = distanceMap.getPositionAtDistance(startDistance);
+        // TODO - Consider that distanceMap only has 100 samples, but this may loop many times more than that (eg. 4k for 40 inches)
         for (double p = startDistance + sampleRate; p < endDistance; p += sampleRate) {
-            double headingDegrees = getHeadingToCoordinate(lastPoint, distanceMap.getPositionAtDistance(p));
-            double maxVelocity = movementParameters.getMaxVelocity(headingDegrees) * segmentSpeedRatio * curvatureEffect / (distanceMap.getCurvatureAtDistance(p)+1);
+            Coordinate newPoint = distanceMap.getPositionAtDistance(p);
+            double headingDegrees = getHeadingToCoordinate(lastPoint, newPoint);
+            double curvature = distanceMap.getCurvatureAtDistance(p);
+            double maxVelocity = movementParameters.getMaxVelocity(headingDegrees, newPoint.getAngle() - lastPoint.getAngle()) * segmentSpeedRatio;
+            // TODO - DO something better here. Something like "if the curvature prevents robot from traveling at this speed, then reduce the speed to what can be done at this curvature"
+//            if (curvatureEffect / curvature < 1)
+//                maxVelocity *= curvatureEffect / curvature;
             resultingIdealMap.addMovementPoint(
                 new MovementPoint(
                     lastPoint,
@@ -194,7 +205,7 @@ public class MotionProfileProcessor {
                     0,
                     0
                 ));
-            lastPoint = distanceMap.getPositionAtDistance(p);
+            lastPoint = newPoint;
         }
         return resultingIdealMap;
     }
@@ -259,7 +270,7 @@ public class MotionProfileProcessor {
         // ==== ROTATIONAL VELOCITY CALCULATIONS ====
         // Get current angular velocity and calculate angular acceleration
         double currentAngularVelocity = point.getVelAngle();
-        double angularAcceleration = movementParameters.getMaxStableAngularAcceleration(currentAngularVelocity);
+        double angularAcceleration = movementParameters.getMaxStableAngularAcceleration(currentAngularVelocity, idealMap.getPoint(newDistance).getVelAngle()>=0);
         
         // Apply angular acceleration over the time step
         double finalVelocityAngle = currentAngularVelocity + (angularAcceleration * step);
@@ -268,7 +279,7 @@ public class MotionProfileProcessor {
         if (Math.abs(idealMap.getPoint(newDistance).getVelAngle()) < Math.abs(finalVelocityAngle)){
             finalVelocityAngle = idealMap.getPoint(newDistance).getVelAngle();
         }
-        
+        //TODO: Store time information from this simulation, and then lerp between the time steps
         // Calculate angular displacement using average angular velocity
         double deltaVelocityAngle = finalVelocityAngle - currentAngularVelocity;
         double finalAngle = point.getPosition().getAngle() + step * (currentAngularVelocity + (1.0/2.0) * deltaVelocityAngle);
@@ -300,7 +311,7 @@ public class MotionProfileProcessor {
         double baseAngle = Math.atan2(yDifference, xDifference);
         baseAngle *= (180.0/Math.PI); // convert to degrees from RADS
         double result = baseAngle - start.getAngle();
-        while (result > 180) result -= 360;
+        while (result >= 180) result -= 360;
         while (result < -180) result += 360;
         return result;
     }

@@ -24,7 +24,7 @@ public class MovementMap {
         // round unit into the nearest integer value that aligns with the index of the last exact movement point
         int idxFloor = (int)(unit/sampleRate);
         // check if there is another point after this unit, which there should be
-        if (idxFloor < movementMap.size()-1){
+        if (idxFloor < movementMap.size()-2){
             MovementPoint lastPoint = movementMap.get(idxFloor);
             MovementPoint nextPoint = movementMap.get(idxFloor+1);
             return lerpMovementPoint(lastPoint,nextPoint, (unit/sampleRate) - (double)idxFloor);

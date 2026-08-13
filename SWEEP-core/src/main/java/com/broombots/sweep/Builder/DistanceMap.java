@@ -13,6 +13,7 @@ public class DistanceMap {
     private ArrayList<Double> distances = new ArrayList<>();
     private ArrayList<Double> curvatures = new ArrayList<>();
 
+    // TODO - Can be a single value, which represents the path length of this segment
     ArrayList<Double> segmentSplitDistances = new ArrayList<>();
     private final double tSampleRate = 0.01;
     public DistanceMap(Segment[] segments){
@@ -36,35 +37,21 @@ public class DistanceMap {
     public Coordinate getPositionAtDistance(double distance){
         if (isDistanceCalculated(distance)) return coordinates.get(distances.indexOf(distance));
         Double[] closestDistances = closestDistancesTo(distance);
-        double ratio = getPartialRatio(distance);
+        double ratio = getPartialRatio(distance, closestDistances);
         return lerpCoordinate(coordinates.get(distances.indexOf(closestDistances[0])),coordinates.get(distances.indexOf(closestDistances[1])), ratio);
     }
     public double getCurvatureAtDistance(double distance){
         if (isDistanceCalculated(distance)) return curvatures.get(distances.indexOf(distance));
 
         Double[] closestCurvatures = closestCurvaturesTo(distance);
-        double ratio = getPartialRatio(distance);
+        double ratio = getPartialRatio(distance, closestCurvatures);
         return lerp(closestCurvatures[0], closestCurvatures[1], ratio);
     }
-    private double getPartialRatio(double distance){
-        Double[] closestDistances = closestDistancesTo(distance);
+    private double getPartialRatio(double distance, Double[] closestDistances){
         return (distance-closestDistances[0])/(closestDistances[1]-closestDistances[0]);
     }
-    public double[] getDistanceBoundsForSegmentIndex(int idx){
-        if (idx < 0 || idx > segmentSplitDistances.size()-1) throw new RuntimeException("Provided Index is out bounds");
-        if (idx == 0){ // At the start of the path where idx -1 is out of bounds, but is going to evaluate to 0
-            return new double[]{
-                    0,
-                    segmentSplitDistances.get(0)
-            };
-        }else {
-            return new double[]{
-                    segmentSplitDistances.get(idx - 1),
-                    segmentSplitDistances.get(idx)
-            };
-        }
-    }
     public double[] getSegmentMaxCurvaturePoints(){
+        // TODO - Fix to get 2 local maxima points, not 2 largest points
         ArrayList<Double> curvatureArray = new ArrayList<>(curvatures); // makes shallow list copy that can be sorted because double is an immutable type
         curvatureArray.sort(Comparator.naturalOrder());
         return new double[]{
@@ -73,9 +60,11 @@ public class DistanceMap {
         };
     }
     private void addSegmentToMap(Segment segment, double startDistance){
+        double currentDistance = 0;
         for (double t = 0; t <= 1; t += tSampleRate){
             coordinates.add(segment.getPosition(t));
-            distances.add(segment.calculateDistance(0,t) + startDistance);
+            currentDistance += segment.calculateDistance(t-tSampleRate,t);
+            distances.add(currentDistance);
             curvatures.add(getCurvature(segment, t));
         }
     }
@@ -87,6 +76,7 @@ public class DistanceMap {
     }
     private Double[] closestDistancesTo(double distance){
         if (isDistanceCalculated(distance)) return new Double[]{distance};
+        // TODO - Don't remove elements from distances, just add the 2 elements nearest
         ArrayList<Double> search = new ArrayList<>(distances);
         int elements = search.size();
 
@@ -127,6 +117,7 @@ public class DistanceMap {
         );
     }
 
+    // TODO - Graph this so we know what values to expect
     private double getCurvature(Segment segment, double t){
         /**
          * ax, bx, cx, dx,
