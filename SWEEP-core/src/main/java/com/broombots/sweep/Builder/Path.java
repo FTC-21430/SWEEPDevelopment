@@ -77,4 +77,7 @@ public class Path {
     public MovementPoint getMovement(double time){
         return compiledPath.getPoint(time);
     }
+    public double getEndTime(){
+        return compiledPath.getLastTime();
+    }
 }

@@ -67,11 +67,13 @@ public class EndWaypoint implements Waypoint {
 	}
 
 	/**
-	 * @return segment speed scale relative to robot top speed
+	 * @return segment speed scale relative to robot top speed.
+	 * Returns 1.0 so the preceding segment's ideal velocity map is non-zero;
+	 * comeToStop in MotionProfileProcessor decelerates the robot to a stop at this boundary.
 	 */
 	@Override
 	public double getSpeed() {
-		return 0;
+		return 1.0;
 	}
 
 	/**

@@ -34,20 +34,23 @@ public class MotionProfileProcessor {
      */
     public MovementMap processPath(Segment[] segments, double sampleRate, MovementPoint startingPoint) {
         if (sampleRate <= 0.0) throw new IllegalArgumentException("SampleRate must be positive");
+        System.out.println("SWEEP MotionProfileProcessor: Starting to process path with " + segments.length + " segments at sample rate " + sampleRate);
         MovementMap movementMap = new MovementMap(sampleRate);
         MovementPoint lastPoint = startingPoint;
         for (int i = 0; i < segments.length; i++){
+            System.out.println("Starting to process segment " + (i + 1) + " / " + segments.length);
             Segment segment = segments[i];
             if (segment instanceof WaitSegment){
                 WaitSegment waitSegment = (WaitSegment) segment;
                 movementMap.addWaitPeriod(waitSegment.getPosition(0),waitSegment.getDuration());
             }else{
-                // We cqn skip the check for if there is going to be another segment after current because PathBuilder ensures that all valid paths end with an end (wait) segment.
+                // We can skip the check for if there is going to be another segment after current because PathBuilder ensures that all valid paths end with an end (wait) segment.
                 boolean shouldComeToStop = segments[i+1] instanceof WaitSegment;
                 //
                 movementMap = MovementMap.combine(movementMap, renderMovementMapThroughTime(compileVelocityProfile(segments[i], lastPoint, sampleRate, shouldComeToStop),sampleRate));
                 lastPoint = movementMap.getAllPoints().get(movementMap.getAllPoints().size()-1);
             }
+            System.out.println("Processed segment " + (i + 1) + " / " + segments.length);
         }
         return movementMap;
     }
@@ -61,8 +64,10 @@ public class MotionProfileProcessor {
         // 7. return that MovementMap which is the velocity profile.
         DistanceMap distanceMap = new DistanceMap(segment);
         double startingDistance = 0;
+        System.out.println("Starting Ideal Map Generation");
         double endingDistance = distanceMap.getMaxDistance();
         MovementMap idealMap = calculateIdealMovementMap(distanceMap, segment.getSpeedRate(),sampleRate);
+        System.out.println("Finished Ideal Map Generation, starting curvature analysis");
         double[] maxCurvature = distanceMap.getSegmentMaxCurvaturePoints();
         double[] simulationPoints = new double[]{
                 startingDistance,
@@ -72,6 +77,7 @@ public class MotionProfileProcessor {
         };
         ArrayList<VelocityMap> simulations = new ArrayList<>();
         for (double point : simulationPoints){
+            System.out.println("Starting simulation at distance " + point + " / " + endingDistance);
             double currentDistance = point;
             VelocityMap currentProfile = new VelocityMap(point, sampleRate, startingPoint, idealMap.getPoint(endingDistance));
 
@@ -92,6 +98,7 @@ public class MotionProfileProcessor {
                 currentProfile.addForwardPoint(lastPoint);
                 lastPoint = basicResult;
             }
+            System.out.println("Finished forward simulation");
             // backward pass
             currentDistance = point-sampleRate;
             while (currentDistance >= startingDistance){
@@ -106,8 +113,10 @@ public class MotionProfileProcessor {
                 currentProfile.addBackPassPoint(lastPoint);
                 lastPoint = basicResult;
             }
+            System.out.println("Finished backward simulation");
             simulations.add(currentProfile);
         }
+        System.out.println("Finished all simulations");
         MovementMap finalizedVelocityMap = VelocityMap.generateMovementFromVelocityMaps(simulations.toArray(new VelocityMap[0]), sampleRate);
         return finalizedVelocityMap;
     }
@@ -279,6 +288,11 @@ public class MotionProfileProcessor {
         // Store calculated accelerations in the previous point for trajectory analysis
         point.setAcceleration(finalAccelerationX, finalAccelerationY, finalAccelerationAngle);
         return newPoint;
+    }
+    private double getWorldHeadingToCoordinate(Coordinate start, Coordinate end){
+        double xDifference = end.getX() - start.getX();
+        double yDifference = end.getY() - start.getY();
+        return Math.toDegrees(Math.atan2(yDifference, xDifference));
     }
     private double getHeadingToCoordinate(Coordinate start, Coordinate end){
         double xDifference = end.getX() - start.getX();

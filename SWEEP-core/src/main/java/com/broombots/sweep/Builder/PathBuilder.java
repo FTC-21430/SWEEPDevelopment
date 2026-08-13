@@ -244,8 +244,19 @@ public class PathBuilder {
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
         for (int i = 1; i < waypoints.size(); i++){
-            Segment segment = createNewSegment(i);
-            segments.add(segment);
+            Waypoint wp = waypoints.get(i);
+            if (wp.getType() == Waypoint.WaypointType.END) {
+                // Generate a spline segment that physically travels to the END position,
+                // then a terminal WaitSegment so comeToStop decelerates the robot to zero.
+                segments.add(new AngledSplineSegment(
+                        getWaypointInRange(i - 2),
+                        getWaypointInRange(i - 1),
+                        wp,
+                        wp));
+                segments.add(new WaitSegment(wp.getCoordinate(), 0.1));
+            } else {
+                segments.add(createNewSegment(i));
+            }
         }
 
         MotionProfileProcessor profileProcessor = new MotionProfileProcessor(movementParameters);
@@ -268,7 +279,8 @@ public class PathBuilder {
             case SPLINE_ANGLE:
                 return new AngledSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
             case END:
-                return new WaitSegment(waypoint.getCoordinate(), 0.1);
+                // END is handled directly in build() — a FollowSplineSegment is created there.
+                throw new RuntimeException("END waypoints must be handled in build(), not createNewSegment()");
             case BREAK:
                 return  new WaitSegment(waypoint.getCoordinate(), 0.05);
             //TODO: Add more cases for new waypoint types as they are created

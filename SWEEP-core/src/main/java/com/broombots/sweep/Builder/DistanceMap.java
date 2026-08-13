@@ -91,46 +91,27 @@ public class DistanceMap {
         int elements = search.size();
 
         while (elements > 2){
-            if (distance >= search.get(elements/2)){
-                for (int i = 0; i < elements/2; i++){
+            int mid = elements / 2;
+            if (distance >= search.get(mid)){
+                for (int i = 0; i < mid; i++){
                     search.remove(0);
                 }
-            }
-            else{
-                for (int i = 0; i < (elements/2)-1; i++){
-                    search.remove(elements/2);
-                }
-            }
-            elements = search.size();
-        }
-       return search.toArray(new Double[0]);
-    }
-    private Double[] closestCurvaturesTo(double distance){
-        // TODO: this searches `curvatures` for values bracketing `distance`, but distance is a distance
-        // value while `curvatures` holds curvature values -- these are different units/domains. The
-        // binary search below (`distance >= search.get(elements/2)`) is comparing a distance against a
-        // curvature, which only works if curvatures happen to be monotonic in distance (they aren't in
-        // general, e.g. curvature can go up-down-up along a curve). getCurvatureAtDistance() likely needs
-        // to search `distances` for the bracket (same as closestDistancesTo) and then read the
-        // corresponding curvature values, rather than binary-searching `curvatures` directly.
-        if (isDistanceCalculated(distance)) return new Double[]{distance};
-        ArrayList<Double> search = new ArrayList<>(curvatures);
-        int elements = search.size();
-
-        while (elements > 2){
-            if (distance >= search.get(elements/2)){
-                for (int i = 0; i < elements/2; i++){
-                    search.remove(0);
-                }
-            }
-            else{
-                for (int i = 0; i < (elements/2)-1; i++){
-                    search.remove(elements/2);
+            } else {
+                while (search.size() > mid + 1){
+                    search.remove(search.size() - 1);
                 }
             }
             elements = search.size();
         }
         return search.toArray(new Double[0]);
+    }
+    private Double[] closestCurvaturesTo(double distance){
+        Double[] bracketDistances = closestDistancesTo(distance);
+        Double[] result = new Double[bracketDistances.length];
+        for (int i = 0; i < bracketDistances.length; i++){
+            result[i] = curvatures.get(distances.indexOf(bracketDistances[i]));
+        }
+        return result;
     }
 
 

@@ -1,7 +1,10 @@
 package com.example.plot;
 
+import com.broombots.sweep.Builder.Path;
+import com.broombots.sweep.Builder.PathBuilder;
 import com.broombots.sweep.Classes.Coordinate;
 import com.broombots.sweep.Classes.Waypoint;
+import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.github.sh0nk.matplotlib4j.NumpyUtils;
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonConfig;
@@ -11,6 +14,7 @@ import com.broombots.sweep.Splines.SplineWaypoint;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,16 +24,16 @@ public class Plotting {
     private static final String LOCAL_VENV_PYTHON = "/home/tobin/SWEEPDevelopment/.venv/bin/python3";
 
     public static void main(String[] args) throws PythonExecutionException, IOException {
-//        makePlot();
-
-        List<Coordinate> sweepWaypoints = Arrays.asList(
-                new Coordinate(0.0, 0.0),
-                new Coordinate(8.0, 20.0),
-                new Coordinate(24.0, 12.0),
-                new Coordinate(40.0, 10.0),
-                new Coordinate(0.0, 22.0)
+        Path path = new PathBuilder(new DefaultRobotMovementParameters())
+                .start(0,0,0)
+                .end(0, 40, 0)
+                .build();
+        SWEEPFullPlotFullRender.PlotRender(path, 0.01, LOCAL_VENV_PYTHON);
+        List<Coordinate> waypoints = Arrays.asList(
+                new Coordinate(0, 0),
+                new Coordinate(0, 40)
         );
-        SweepCatmullRomPathPlotter.plotPath(sweepWaypoints, 60, resolvePythonBinPath());
+        SweepCatmullRomPathPlotter.plotPath(waypoints, 40, LOCAL_VENV_PYTHON);
     }
 
     public static void makePlot() throws PythonExecutionException, IOException {
@@ -99,6 +103,92 @@ class SweepCatmullRomPathPlotter {
         Plot plt = Plot.create(PythonConfig.pythonBinPathConfig(pythonBinPath));
         plt.plot().add(xPath, yPath).label("SWEEP Catmull-Rom Path");
         plt.legend();
+        plt.show();
+    }
+}
+class SWEEPFullPlotFullRender{
+    public static void PlotRender(Path compiledPath, double timeSampleRate, String pythonDirectory)
+            throws PythonExecutionException, IOException {
+        ArrayList<Double> timeValues = new ArrayList<>();
+        ArrayList<Double> xValues = new ArrayList<>();
+        ArrayList<Double> yValues = new ArrayList<>();
+        ArrayList<Double> angleValues = new ArrayList<>();
+        ArrayList<Double> xVelValues = new ArrayList<>();
+        ArrayList<Double> yVelValues = new ArrayList<>();
+        ArrayList<Double> angleVelValues = new ArrayList<>();
+        ArrayList<Double> velMagnitude = new ArrayList<>();
+        for (double i = 0; i < compiledPath.getEndTime(); i += timeSampleRate){
+            double velX = compiledPath.getMovement(i).getVelX();
+            double velY = compiledPath.getMovement(i).getVelY();
+            xValues.add(compiledPath.getMovement(i).getPosition().getX());
+            yValues.add(compiledPath.getMovement(i).getPosition().getY());
+            angleValues.add(compiledPath.getMovement(i).getPosition().getAngle());
+            xVelValues.add(velX);
+            yVelValues.add(velY);
+            angleVelValues.add(compiledPath.getMovement(i).getVelAngle());
+            velMagnitude.add(Math.hypot(velX, velY));
+            timeValues.add(i);
+        }
+
+        // All plots in one figure so all windows open at once
+        Plot plt = Plot.create(PythonConfig.pythonBinPathConfig(pythonDirectory));
+
+        plt.subplot(3, 3, 1);
+        plt.plot().add(xValues, yValues).label("XY Path");
+        plt.title("XY Path");
+        plt.xlabel("X (in)");
+        plt.ylabel("Y (in)");
+        plt.legend();
+
+        plt.subplot(3, 3, 2);
+        plt.plot().add(timeValues, angleValues).label("Angle");
+        plt.title("Angle vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Angle (deg)");
+        plt.legend();
+
+        plt.subplot(3, 3, 3);
+        plt.plot().add(timeValues, velMagnitude).label("Speed");
+        plt.title("Speed vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Speed (in/s)");
+        plt.legend();
+
+        plt.subplot(3, 3, 4);
+        plt.plot().add(timeValues, xValues).label("X Position");
+        plt.title("X Position vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("X (in)");
+        plt.legend();
+
+        plt.subplot(3, 3, 5);
+        plt.plot().add(timeValues, yValues).label("Y Position");
+        plt.title("Y Position vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Y (in)");
+        plt.legend();
+
+        plt.subplot(3, 3, 7);
+        plt.plot().add(timeValues, xVelValues).label("X Velocity");
+        plt.title("X Velocity vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Vel X (in/s)");
+        plt.legend();
+
+        plt.subplot(3, 3, 8);
+        plt.plot().add(timeValues, yVelValues).label("Y Velocity");
+        plt.title("Y Velocity vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Vel Y (in/s)");
+        plt.legend();
+
+        plt.subplot(3, 3, 9);
+        plt.plot().add(timeValues, angleVelValues).label("Angular Velocity");
+        plt.title("Angular Velocity vs Time");
+        plt.xlabel("Time (s)");
+        plt.ylabel("Vel Angle (deg/s)");
+        plt.legend();
+
         plt.show();
     }
 }
