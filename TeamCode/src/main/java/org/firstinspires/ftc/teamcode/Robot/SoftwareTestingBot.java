@@ -4,10 +4,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.ExampleCode.ExampleAction;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.SWEEPRobot;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.Subsystem;
+import com.broombots.sweep.Classes.SWEEPRobot;
+import com.broombots.sweep.Classes.Subsystem;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Drivetrain;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.Coordinate;
+import com.broombots.sweep.Classes.Coordinate;
 /**
  * This class represents a software testing robot that extends the SWEEPRobot class.
  * It contains subsystems and actions specific to the software testing robot.
