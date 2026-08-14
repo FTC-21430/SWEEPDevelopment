@@ -1,6 +1,14 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Movement;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+
+@Disabled
+
+//TODO Refactor this class and work on bringing up to date.
+//NOTE THIS CLASS SHOULD NOT BE REVIEWED OR USED FOR ANYTHING OTHER THAN REFERENCE. IT IS NOT CURRENTLY FUNCTIONAL AND IS IN THE PROCESS OF BEING REWRITTEN.
+
 
 /** This class is designed to make using PID controllers easier when programming.
 * all this does is takes in constants and the runtime, is given a target number and a current number.

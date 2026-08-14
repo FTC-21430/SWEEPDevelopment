@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Classes;
 
 /**
- * Immutable data packet representing a single odometry sample.
+ * Immutable data packet representing a single localization sample.
  *
  * <p>Holds the robot pose (x, y, yaw) in field coordinates and the
  * corresponding velocity components in the field frame (velX, velY).
@@ -9,11 +9,11 @@ package org.firstinspires.ftc.teamcode.SWEEP.Classes;
  * object for telemetry, logging, or motion calculations.</p>
  */
 @SuppressWarnings("unused") // prevent method unused warnings from cramping my style :)
-public class OdometryPacket {
+public class LocalizationPacket {
+    // The robot pose and velocity in field coordinates.
     private final double x,y,yaw,velX,velY;
-
     /**
-     * Construct a new OdometryPacket.
+     * Construct a new LocalizationPacket.
      *
      * @param x field X position (units are caller-defined, e.g. meters)
      * @param y field Y position (same units as x)
@@ -21,7 +21,7 @@ public class OdometryPacket {
      * @param velocityX velocity along the field X axis (units/time, e.g. inches/second)
      * @param velocityY velocity along the field Y axis (units/time, e.g. inches/second)
      */
-    public OdometryPacket(double x, double y, double yaw, double velocityX, double velocityY){
+    public LocalizationPacket(double x, double y, double yaw, double velocityX, double velocityY){
        this.x = x;
        this.y = y;
        this.yaw = yaw;
@@ -29,7 +29,6 @@ public class OdometryPacket {
        this.velY = velocityY;
    
     }
-
     /**
      * Returns the X position in field coordinates.
      * @return the field X position
@@ -37,7 +36,6 @@ public class OdometryPacket {
     public double getX() {
         return x;
     }
-
     /**
      * Returns the Y position in field coordinates.
      * @return the field Y position
@@ -45,7 +43,6 @@ public class OdometryPacket {
     public double getY() {
         return y;
     }
-
     /**
      * Returns the robot heading (yaw).
      * @return the yaw/heading (in degrees)
@@ -53,7 +50,6 @@ public class OdometryPacket {
     public double getYaw() {
         return yaw;
     }
-
     /**
      * Returns the velocity along the field X axis.
      * @return velocity in the X direction
@@ -61,12 +57,14 @@ public class OdometryPacket {
     public double getVelX() {
         return velX;
     }
-
     /**
      * Returns the velocity along the field Y axis.
      * @return velocity in the Y direction
      */
     public double getVelY() {
         return velY;
+    }
+    public Coordinate getCoordinate(){
+        return new Coordinate(x,y,yaw);
     }
 }

@@ -1,13 +1,15 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Movement;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.ejml.simple.SimpleMatrix;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.OdometryPacket;
-import org.firstinspires.ftc.teamcode.SWEEP.Runtime.SplinePathInterpreter;
+import org.firstinspires.ftc.teamcode.SWEEP.Classes.LocalizationPacket;
+@Disabled
 
-
+//TODO Refactor this class and work on bringing up to date.
+//NOTE THIS CLASS SHOULD NOT BE REVIEWED OR USED FOR ANYTHING OTHER THAN REFERENCE. IT IS NOT CURRENTLY FUNCTIONAL AND IS IN THE PROCESS OF BEING REWRITTEN.
 /**
  * Gets the current spline we are following and the time, infers the target point and outputs how to move the drivetrain to get there
  */
@@ -36,9 +38,9 @@ public class AccelerationControl {
 
     /**
      * This updates acceleration control by giving it all the correct values to stay current
-     * @param odometryPacket gives the ingo needed to fully update Acceleration control
+     * @param localizationPacket gives the ingo needed to fully update Acceleration control
      */
-    public void update(OdometryPacket odometryPacket, boolean shouldAimAtGoal){
+    public void update(LocalizationPacket localizationPacket, boolean shouldAimAtGoal){
         double minorRatio = (1-accelRatio) > 0 ? 1-accelRatio:1e-7;
         SimpleMatrix robotPosNow = splinePathInterpreter.getRobotPosition(0);
         SimpleMatrix robotPosNext = splinePathInterpreter.getRobotPosition(lookAheadTime1);
@@ -54,8 +56,8 @@ public class AccelerationControl {
         }
 
 //        rotationControl.setTargetAngle(90);
-        setMotorPowers(posNeededX, posNeededY, odometryPacket);
-        double followError = Math.hypot(robotPosNow.get(0)-odometryPacket.getX(),robotPosNow.get(1)-odometryPacket.getY());
+        setMotorPowers(posNeededX, posNeededY, localizationPacket);
+        double followError = Math.hypot(robotPosNow.get(0)- localizationPacket.getX(),robotPosNow.get(1)- localizationPacket.getY());
 
         // Use the look-ahead's computed rotation as the desired heading so the robot
         // points along the path of travel (instead of sampling rotation with a zero
@@ -71,15 +73,15 @@ public class AccelerationControl {
      * Finds the motor powers required, then sets them with a lot of math
      * @param targetPosX - helps with correcting with the X velocity
      * @param targetPosY - helps with the Y axis velocity
-     * @param odometryPacket - contains the robot position and velocity information needed for these calculations to the PID controllers
+     * @param localizationPacket - contains the robot position and velocity information needed for these calculations to the PID controllers
      */
-    private void setMotorPowers(double targetPosX, double targetPosY, OdometryPacket odometryPacket){
-        double robotAngle = odometryPacket.getYaw();
+    private void setMotorPowers(double targetPosX, double targetPosY, LocalizationPacket localizationPacket){
+        double robotAngle = localizationPacket.getYaw();
 
         xPID.setTarget(targetPosX);
         yPID.setTarget(targetPosY);
-        xPID.update(odometryPacket.getX());
-        yPID.update(odometryPacket.getY());
+        xPID.update(localizationPacket.getX());
+        yPID.update(localizationPacket.getY());
 
         fwdPower=(yPID.getPower() * Math.sin(Math.toRadians(robotAngle)) + xPID.getPower() * Math.cos(Math.toRadians(robotAngle))) * 1;
         sidePower=(yPID.getPower() * Math.cos(Math.toRadians(robotAngle)) - xPID.getPower() * Math.sin(Math.toRadians(robotAngle))) * -1;

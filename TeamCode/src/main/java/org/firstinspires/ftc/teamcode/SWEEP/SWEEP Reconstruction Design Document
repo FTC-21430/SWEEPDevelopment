@@ -1,9 +1,0 @@
-This new implementation of SWEEP is going to be split into several different folders, and is intended to be as modular,
-and as reusable as possible. The main folders are as follows:
-- Builder = Generating new paths for the robot to follow
-- Movement = Calculating movement vectors to follow the given path
-- Runtime = The main logic for handling several SWEEP Paths and making the movement execute
-- Spline = The classes that generate individual spline segments, one class for each implementation of the spline algorithms
-- Classes = The common classes that are used across the library
-
-Task 1: Translating the old SWEEP Library into this new structure, and ensuring it works the same

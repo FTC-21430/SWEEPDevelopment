@@ -1,11 +1,17 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Movement;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.ArrayList;
 import java.util.List;
+
+@Disabled
+
+//TODO Refactor this class and work on bringing up to date.
+//NOTE THIS CLASS SHOULD NOT BE REVIEWED OR USED FOR ANYTHING OTHER THAN REFERENCE. IT IS NOT CURRENTLY FUNCTIONAL AND IS IN THE PROCESS OF BEING REWRITTEN.
 
 //This class is used to take the current angle and calculate what turn power you need to get there
 public class RotationControl {

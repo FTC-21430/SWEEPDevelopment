@@ -1,185 +1,61 @@
 package org.firstinspires.ftc.teamcode.SWEEP.Classes;
 
-import org.firstinspires.ftc.teamcode.Firmware.DecodeBot;
-import org.firstinspires.ftc.teamcode.Firmware.OperatorStateMachine;
-import org.firstinspires.ftc.teamcode.Firmware.Systems.SpindexerColorSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
- * Assist class for one action that robot is commanded to do.
+ * A generic framework for how actions should be structured.
  */
-public class Action {
-    private final RobotActions.Actions actionType;
-    private final TriggerConditions triggerMode;
-    private double triggerTime = 0.0;
-    private int triggerSplineOrder = 0;
-    private final DecodeBot robot;
+public abstract class Action {
+    // The robot that this action is being executed on
+    Robot robot;
+    double holdTime = 0; // Default hold time of 0 seconds, can be changed in the constructor
+    // Timer to track how long the action has been running
+    private final ElapsedTime timer = new ElapsedTime();
 
-    private enum TriggerConditions {
-        SPLINE_ORDER,
-        TIMING
-    }
-
-    public Action(RobotActions.Actions actionType, DecodeBot robot, int splineOrder) {
-        this.actionType = actionType;
-        this.triggerMode = TriggerConditions.SPLINE_ORDER;
-        this.triggerSplineOrder = splineOrder;
+    /**
+     * Create a new action, called as a super,
+     * @param robot The robot that this action is being executed on.
+     */
+    public Action(Robot robot){
         this.robot = robot;
     }
 
-    public Action(RobotActions.Actions actionType, DecodeBot robot, double triggerTime) {
-        this.actionType = actionType;
-        this.triggerMode = TriggerConditions.TIMING;
-        this.triggerTime = triggerTime;
-        this.robot = robot;
+    /**
+     * The hold time that the action should hold
+     * @param holdTime The duration in seconds for which the action should hold.
+     */
+    public void setHoldTime(double holdTime){
+        this.holdTime = holdTime;
+    }
+    /**
+     * Start the action - any initial logic
+     */
+    public abstract void execute();
+
+    /**
+     * Update loop for the action, runs every master iteration
+     */
+    public abstract void process();
+    /**
+     * If another action is queued that conflicts with this action, stop this action safely
+     * Returns true if the action is complete, will return false if there is a reason to block the change
+     *
+     */
+    public boolean interrupt(){
+        end();
+        return true; // Action can be interrupted safely
+    }
+    /**
+     * Used by the action manager to check if the action is naturally complete by specific conditions
+     * @return True if action is complete, False if it is still running
+     */
+    public boolean completion(){
+        return timer.seconds() >= holdTime;
     }
 
-    public boolean checkAction(int splineID, double time) {
-        switch (triggerMode) {
-            case SPLINE_ORDER:
-                if (splineID >= triggerSplineOrder) {
+    /**
+     * The last bit of code that will run once the action is completed naturally
+     */
+    abstract public void end();
 
-                    return true;
-                }
-                break;
-            case TIMING:
-                // timing-based trigger: fire when runtime time >= triggerTime
-                if (time >= triggerTime) {
-                    return true;
-                }
-                break;
-        }
-        return false; // Return true if the action was triggered, false otherwise
-    }
-
-    public void triggerAction() {
-        switch (actionType) {
-            case INTAKE:
-                actionIntake();
-                break;
-            case LAUNCH:
-                actionLaunch();
-                break;
-            case SCAN_MOTIF:
-                actionScanMotif();
-                break;
-            case READY_RAMP:
-                actionReadyRamp();
-                break;
-            case IDLE:
-                actionIdle();
-                break;
-            case PREPPING:
-                actionPrep();
-                break;
-            case REV_FAR:
-                actionRevFar();
-                break;
-            case REV_CLOSE:
-                actionRevClose();
-                break;
-            case SET_LAUNCHER:
-                actionSetLauncher();
-                break;
-            case TOGGLE_GOAL_AIMING:
-                actionToggleGoalAiming();
-                break;
-            case SET_CONSTANT_TRAJECTORY_CLOSE:
-                actionSetConstantTrajectoryClose();
-                break;
-            case SET_CONSTANT_TRAJECTORY_FAR:
-                actionSetConstantTrajectoryFar();
-                break;
-            case SET_CONSTANT_TRAJECTORY_DEFAULT:
-                actionSetConstantTrajectoryDefault();
-                break;
-            case SET_CONSTANT_TRAJECTORY_GOAL:
-                actionSetConstantTrajectoryGate();
-                break;
-            case APRILTAG_CALIBRATE:
-                actionAprilTagCalibrate();
-                break;
-        }
-    }
-
-    // Action run methods
-
-    private void actionIntake() {
-        robot.operatorStateMachine.moveToState(OperatorStateMachine.State.INTAKE);
-    }
-
-    private void actionLaunch() {
-        robot.operatorStateMachine.moveToState(OperatorStateMachine.State.LAUNCH);
-    }
-
-    private void actionPrep() {
-        if (robot.motifId == 21) {
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.GREEN);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-        }
-        if (robot.motifId == 22) {
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.GREEN);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-        }
-        if (robot.motifId == 23) {
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.PURPLE);
-            robot.operatorStateMachine.addToQueue(SpindexerColorSensor.COLORS.GREEN);
-        }
-        robot.operatorStateMachine.moveToState(OperatorStateMachine.State.PREPPING);
-    }
-
-    private void actionScanMotif() {
-        robot.scanMotif();
-    }
-
-    private void actionIdle() {
-        robot.intake.turnOff();
-    }
-
-    private void actionReadyRamp() {
-        robot.trajectoryKinematics.calculateTrajectory(robot.trajectoryKinematics.getDistance(robot.alliance, robot.odometry.getRobotX(), robot.odometry.getRobotY()), robot.launcher.getFlywheelError());
-        robot.launcher.setLaunchAngle(robot.trajectoryKinematics.getInitialAngle());
-    }
-
-    private void actionRevFar() {
-        robot.trajectoryKinematics.calculateTrajectory(95, 0);
-        robot.launcher.setSpeed(robot.trajectoryKinematics.getLaunchMagnitude());
-    }
-
-    private void actionRevClose() {
-        robot.trajectoryKinematics.calculateTrajectory(30, 0);
-        robot.launcher.setSpeed(robot.trajectoryKinematics.getLaunchMagnitude());
-    }
-
-    private void actionSetLauncher() {
-        robot.trajectoryKinematics.updateVelocities(robot.odometry.getVelocityX(), robot.odometry.getVelocityY());
-        robot.trajectoryKinematics.calculateTrajectory(robot.trajectoryKinematics.getDistance(robot.alliance, robot.odometry.getRobotX(), robot.odometry.getRobotY()), robot.launcher.getFlywheelError());
-        robot.launcher.setSpeed(robot.trajectoryKinematics.getLaunchMagnitude());
-        robot.launcher.setLaunchAngle(robot.trajectoryKinematics.getInitialAngle());
-    }
-
-    private void actionToggleGoalAiming() {
-        // toggles the aiming flag. should not impact the existent SWEEP rotation code unless this action is called.
-        robot.setSweepAimingAtGoal(!robot.shouldSWEEPAimAtGoal());
-    }
-
-    private void actionSetConstantTrajectoryClose() {
-        robot.operatorStateMachine.setAutonomousConstantLaunchMode(OperatorStateMachine.AutonomousConstantLaunchMode.CLOSE);
-    }
-
-    private void actionSetConstantTrajectoryFar() {
-        robot.operatorStateMachine.setAutonomousConstantLaunchMode(OperatorStateMachine.AutonomousConstantLaunchMode.FAR);
-    }
-
-    private void actionSetConstantTrajectoryDefault() {
-        robot.operatorStateMachine.setAutonomousConstantLaunchMode(OperatorStateMachine.AutonomousConstantLaunchMode.NONE);
-    }
-    private void actionSetConstantTrajectoryGate(){
-        robot.operatorStateMachine.setAutonomousConstantLaunchMode(OperatorStateMachine.AutonomousConstantLaunchMode.GATE_LOAD_POS);
-    }
-    private void actionAprilTagCalibrate(){
-        robot.updateOdometryOnTags(true);
-    }
 }
