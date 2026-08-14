@@ -51,7 +51,7 @@ public class PathBuilder {
      * The rate at which a path will be simulated and evaluated. Lower numbers means more accuracy with a tradeoff for slower processing times mainly during path rendering.
      * Default value is 0.01
      */
-    private double sampleRate = 0.1;
+    private double sampleRate = 0.0005;
     private RobotMovementParameters movementParameters;
     private MovementPoint startingPoint;
     /**

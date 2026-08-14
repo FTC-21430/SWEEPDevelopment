@@ -16,7 +16,7 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
 
     public double getMaxVelocity(double direction, double angleError){
         // 1.5 m/s for the average robot
-        return (robotTopSpeedStraight / 2) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
+        return (robotTopSpeedStraight / 2 * Math.sqrt(2)) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
     }
     public double getAngleVelocity(){
         return 360/timeForFullTurn; // degrees per second

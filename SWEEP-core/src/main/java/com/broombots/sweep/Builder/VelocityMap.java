@@ -29,18 +29,14 @@ public class VelocityMap {
             map.normalizeVelocityProfile();
             maxDistance = Math.max(maxDistance, map.getMaxDistance());
         }
-        // TODO: increase the sampling rate here
-        for (double d = 0.0; d <= maxDistance + 1e-9; d += sampleRate*100){
+        for (double d = 0.0; d <= maxDistance + 1e-9; d += sampleRate){
             MovementPoint smallestPoint = velocityMaps[0].getPointAtDistance(d);
             for (int j = 1; j < velocityMaps.length; j++){
                 MovementPoint point = velocityMaps[j].getPointAtDistance(d);
-                System.out.println(point.getVelocityMagnitude());
                 smallestPoint = smallestPoint.getVelocityMagnitude() > point.getVelocityMagnitude()?  point : smallestPoint;
             }
             combined.addMovementPoint(smallestPoint);
         }
-
-        // Everything up till this points seems to be working correctly
 
         MovementMap accelerationMap = new MovementMap(sampleRate);
         for (double d = 0.0; d <= maxDistance - sampleRate + 1e-9; d += sampleRate){

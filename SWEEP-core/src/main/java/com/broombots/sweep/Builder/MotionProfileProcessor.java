@@ -55,6 +55,7 @@ public class MotionProfileProcessor {
         }
         return movementMap;
     }
+    // WORKING for straight line test
     private MovementMap compileVelocityProfile(Segment segment, MovementPoint startingPoint, double sampleRate, boolean comeToStop, DistanceMap distanceMap) {
         //Algorithm steps
         // 1. convert to be in terms of distance - DONE
@@ -162,6 +163,9 @@ public class MotionProfileProcessor {
         double time = 0.0;
         timeProfile.addPoint(currentPoint, time);
 
+        System.out.println("Spline length vs Velocity Profile Distance " + spline.getMaxDistance() + " vs " + velocityProfile.getMaxKey());
+
+        double velocityMapKeyToSplineKey = spline.getMaxDistance()/velocityProfile.getMaxKey();
         while (traveledDistance < maxDistance + 1e-5){
             traveledDistance += sampleRate;
             MovementPoint distanceLookup = velocityProfile.getPoint(Math.min(traveledDistance, maxDistance));
@@ -172,7 +176,7 @@ public class MotionProfileProcessor {
             double accelY = Math.abs(distanceLookup.getAccelY()) < 1e-5? 0: distanceLookup.getAccelY();
             double accelAngle = Math.abs(distanceLookup.getAccelAngle()) < 1e-5? 0: distanceLookup.getAccelAngle();
             MovementPoint finalPoint = new MovementPoint(
-                    spline.getPositionAtDistance(traveledDistance),
+                    spline.getPositionAtDistance(traveledDistance * velocityMapKeyToSplineKey),
                     velX,
                     velY,
                     velAngle,
@@ -190,7 +194,7 @@ public class MotionProfileProcessor {
     }
     private double getTimeBetweenPoints(MovementPoint start, MovementPoint end){
         double distance = Coordinate.getDistanceBetweenCoordinates(start.getPosition(), end.getPosition());
-        double avgVelocityMagnitude = (start.getVelocityMagnitude() + end.getVelocityMagnitude())/2;
+        double avgVelocityMagnitude = Math.abs((start.getVelocityMagnitude() + end.getVelocityMagnitude())/2);
         return distance / avgVelocityMagnitude;
     }
     private MovementMap calculateIdealMovementMap(DistanceMap distanceMap, double segmentSpeedRatio, double sampleRate){

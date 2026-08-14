@@ -34,6 +34,9 @@ public class Path {
         this.compiledPath = compiledPath;
         this.actions = new ArrayList<>();
         Collections.addAll(this.actions, actions);
+
+        System.out.println("Compiled path has " + compiledPath.getAllPoints().size() + " points");
+        System.out.println(compiledPath.getAllPoints());
     }
 
     /**

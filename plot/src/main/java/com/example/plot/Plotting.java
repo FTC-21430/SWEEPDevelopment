@@ -26,6 +26,8 @@ public class Plotting {
     public static void main(String[] args) throws PythonExecutionException, IOException {
         Path path = new PathBuilder(new DefaultRobotMovementParameters())
                 .start(0,0,0)
+                .splineToAngle(-20,20,0,0.4)
+                .splineToAngle(20,20,0,0.7)
                 .end(0, 40, 0)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(path, 0.01, LOCAL_VENV_PYTHON);
@@ -128,7 +130,9 @@ class SWEEPFullPlotFullRender{
             angleVelValues.add(compiledPath.getMovement(i).getVelAngle());
             velMagnitude.add(Math.hypot(velX, velY));
             timeValues.add(i);
+            System.out.println("At Time: " + i + ", velY = " + velY);
         }
+        System.out.println();
 
         // All plots in one figure so all windows open at once
         Plot plt = Plot.create(PythonConfig.pythonBinPathConfig(pythonDirectory));

@@ -53,7 +53,7 @@ public class MovementMap {
         }
    }
    public double getLastTime(){
-        return sampleRate * movementMap.size()-1;
+        return sampleRate * (movementMap.size()-1);
    }
     public ArrayList<MovementPoint> getAllPoints(){
         return new ArrayList<>(movementMap);
