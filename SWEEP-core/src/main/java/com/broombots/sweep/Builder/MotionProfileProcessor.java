@@ -69,14 +69,20 @@ public class MotionProfileProcessor {
         System.out.println("Starting Ideal Map Generation");
         double endingDistance = distanceMap.getMaxDistance();
         MovementMap idealMap = calculateIdealMovementMap(distanceMap, segment.getSpeedRate(),sampleRate);
+//        return idealMap;
         System.out.println("Finished Ideal Map Generation, starting curvature analysis");
         ArrayList<Double> maxCurvature = distanceMap.getSegmentDistancesWithLocalMaximaCurvature();
-        double[] simulationPoints = new double[]{
-                startingDistance,
-                maxCurvature.get(0),
-                maxCurvature.get(1),
-                endingDistance
-        };
+        ArrayList<Double> simulationPoints = new ArrayList<>();
+        simulationPoints.add(startingDistance);
+        simulationPoints.addAll(maxCurvature);
+        simulationPoints.add(endingDistance);
+
+        System.out.println("SimulationPoints: ");
+        for ( double point : simulationPoints){
+            System.out.print(point + ", ");
+        }
+        System.out.println(" ");
+
         ArrayList<VelocityMap> simulations = new ArrayList<>();
         for (double point : simulationPoints){
             System.out.println("Starting simulation at distance " + point + " / " + endingDistance);
@@ -84,7 +90,7 @@ public class MotionProfileProcessor {
             VelocityMap currentProfile = new VelocityMap(point, sampleRate, startingPoint, idealMap.getPoint(endingDistance));
 
             MovementPoint lastPoint;
-            if (point == simulationPoints[0]){
+            if (point == simulationPoints.get(0)){
                 lastPoint = startingPoint;
             }else{
                 lastPoint = idealMap.getPoint(point);
@@ -125,6 +131,7 @@ public class MotionProfileProcessor {
             }
             System.out.println("Finished backward simulation");
             simulations.add(currentProfile);
+//            break;
         }
         System.out.println("Finished all simulations");
         MovementMap finalizedVelocityMap = VelocityMap.generateMovementFromVelocityMaps(simulations.toArray(new VelocityMap[0]), sampleRate);
@@ -202,7 +209,7 @@ public class MotionProfileProcessor {
         double startDistance = distanceMap.getMinDistance();
         double endDistance = distanceMap.getMaxDistance();
         Coordinate lastPoint = distanceMap.getPositionAtDistance(startDistance);
-        // TODO - Consider that distanceMap only has 100 samples, but this may loop many times more than that (eg. 4k for 40 inches)
+        // TODO - Consider that distanceMap only has 100 samplescoordinates, but this may loop many times more than that (eg. 4k for 40 inches)
         for (double p = startDistance + sampleRate*100; p < endDistance; p += sampleRate*100) {
             Coordinate newPoint = distanceMap.getPositionAtDistance(p);
             double headingDegrees = getHeadingToCoordinate(lastPoint, newPoint);
@@ -211,12 +218,13 @@ public class MotionProfileProcessor {
             // TODO - DO something better here. Something like "if the curvature prevents robot from traveling at this speed, then reduce the speed to what can be done at this curvature"
 //            if (curvatureEffect / curvature < 1)
 //                maxVelocity *= curvatureEffect / curvature;
+            double angleError = newPoint.getAngle() - lastPoint.getAngle();
             resultingIdealMap.addMovementPoint(
                 new MovementPoint(
                     lastPoint,
                     Math.cos(Math.toRadians(headingDegrees)) * maxVelocity,
                     Math.sin(Math.toRadians(headingDegrees)) * maxVelocity,
-                    movementParameters.getAngleVelocity() * segmentSpeedRatio,
+                    movementParameters.getAngleVelocity() * segmentSpeedRatio * Math.signum(angleError),
                     0,
                     0,
                     0

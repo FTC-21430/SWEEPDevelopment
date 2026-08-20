@@ -54,22 +54,23 @@ public class DistanceMap {
                 distanceAtLocalMaximas.add(distances.get(i));
             }
         }
-        ArrayList<Double> result = new ArrayList<>();
-        for (int j = 0; j < Math.min(2, localMaximaCurvatures.size()); j++){
-            int bestIdx = 0;
-            for (int i = 1; i < localMaximaCurvatures.size(); i++){
-                if (localMaximaCurvatures.get(i) > localMaximaCurvatures.get(bestIdx)){
-                    bestIdx = i;
-                }
-            }
-            result.add(distanceAtLocalMaximas.get(bestIdx));
-            localMaximaCurvatures.remove(bestIdx);
-            distanceAtLocalMaximas.remove(bestIdx);
-        }
-        while (result.size() < 2){
-            result.add(0.0);
-        }
-        return result;
+        System.out.println(localMaximaCurvatures.size());
+//        ArrayList<Double> result = new ArrayList<>();
+//        for (int j = 0; j < Math.min(2, localMaximaCurvatures.size()); j++){
+//            int bestIdx = 0;
+//            for (int i = 1; i < localMaximaCurvatures.size(); i++){
+//                if (localMaximaCurvatures.get(i) > localMaximaCurvatures.get(bestIdx)){
+//                    bestIdx = i;
+//                }
+//            }
+//            result.add(distanceAtLocalMaximas.get(bestIdx));
+//            localMaximaCurvatures.remove(bestIdx);
+//            distanceAtLocalMaximas.remove(bestIdx);
+//        }
+//        while (result.size() < 2){
+//            result.add(0.0);
+//        }
+        return distanceAtLocalMaximas;
     }
     private void addSegmentToMap(Segment segment, double startDistance){
         double currentDistance = 0;

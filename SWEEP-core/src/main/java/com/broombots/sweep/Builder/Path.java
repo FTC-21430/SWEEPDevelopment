@@ -36,7 +36,6 @@ public class Path {
         Collections.addAll(this.actions, actions);
 
         System.out.println("Compiled path has " + compiledPath.getAllPoints().size() + " points");
-        System.out.println(compiledPath.getAllPoints());
     }
 
     /**

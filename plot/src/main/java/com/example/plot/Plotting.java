@@ -26,16 +26,16 @@ public class Plotting {
     public static void main(String[] args) throws PythonExecutionException, IOException {
         Path path = new PathBuilder(new DefaultRobotMovementParameters())
                 .start(0,0,0)
-                .splineToAngle(-20,20,0,0.4)
-                .splineToAngle(20,20,0,0.7)
+                .splineToAngle(-20,20,0, 1)
+                .splineToAngle(20,20,0, 1)
                 .end(0, 40, 0)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(path, 0.01, LOCAL_VENV_PYTHON);
-        List<Coordinate> waypoints = Arrays.asList(
-                new Coordinate(0, 0),
-                new Coordinate(0, 40)
-        );
-        SweepCatmullRomPathPlotter.plotPath(waypoints, 40, LOCAL_VENV_PYTHON);
+//        List<Coordinate> waypoints = Arrays.asList(
+//                new Coordinate(0, 0),
+//                new Coordinate(0, 40)
+//        );
+//        SweepCatmullRomPathPlotter.plotPath(waypoints, 40, LOCAL_VENV_PYTHON);
     }
 
     public static void makePlot() throws PythonExecutionException, IOException {
@@ -174,14 +174,14 @@ class SWEEPFullPlotFullRender{
 
         plt.subplot(3, 3, 7);
         plt.plot().add(timeValues, xVelValues).label("X Velocity");
-        plt.title("X Velocity vs Time");
+        plt.title("Robot Relative X Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel X (in/s)");
         plt.legend();
 
         plt.subplot(3, 3, 8);
         plt.plot().add(timeValues, yVelValues).label("Y Velocity");
-        plt.title("Y Velocity vs Time");
+        plt.title("Robot Relative Y Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel Y (in/s)");
         plt.legend();
