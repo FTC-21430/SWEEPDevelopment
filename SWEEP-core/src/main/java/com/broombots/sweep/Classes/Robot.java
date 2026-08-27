@@ -7,7 +7,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.util.ArrayList;
 
 /**
- * The Robot class is the base class for all robots in the SWEEP framework.
+ * The Robot class is the base class for all robots in the BroomBots framework.
  * It contains the basic structure and functionality that all robots should have,
  * including subsystems, actions, and telemetry.
  */

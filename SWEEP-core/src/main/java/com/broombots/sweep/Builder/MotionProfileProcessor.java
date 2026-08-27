@@ -68,13 +68,16 @@ public class MotionProfileProcessor {
         double startingDistance = 0;
         System.out.println("Starting Ideal Map Generation");
         double endingDistance = distanceMap.getMaxDistance();
+//        System.out.println(endingDistance);
         MovementMap idealMap = calculateIdealMovementMap(distanceMap, segment.getSpeedRate(),sampleRate);
+//        endingDistance = idealMap.getMaxKey();
+//        System.out.println(endingDistance);
 //        return idealMap;
         System.out.println("Finished Ideal Map Generation, starting curvature analysis");
         ArrayList<Double> maxCurvature = distanceMap.getSegmentDistancesWithLocalMaximaCurvature();
         ArrayList<Double> simulationPoints = new ArrayList<>();
-        simulationPoints.add(startingDistance);
-        simulationPoints.addAll(maxCurvature);
+//        simulationPoints.add(startingDistance);
+//        simulationPoints.addAll(maxCurvature);
         simulationPoints.add(endingDistance);
 
         System.out.println("SimulationPoints: ");
@@ -90,23 +93,28 @@ public class MotionProfileProcessor {
             VelocityMap currentProfile = new VelocityMap(point, sampleRate, startingPoint, idealMap.getPoint(endingDistance));
 
             MovementPoint lastPoint;
-            if (point == simulationPoints.get(0)){
+            if (Math.abs(point - simulationPoints.get(0)) < 1e-9){
                 lastPoint = startingPoint;
             }else{
                 lastPoint = idealMap.getPoint(point);
             }
-            while (currentDistance <= endingDistance){
-                MovementPoint basicResult;
-                if (comeToStop && Math.abs(currentDistance - endingDistance) <= 1e-9){
-                    System.out.println("STOPPING POINT!");
-                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, new MovementPoint(distanceMap.getPositionAtDistance(currentDistance),0,0,0,0,0,0), idealMap);
-                }else{
-                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
-                }
-                currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
-                currentProfile.addForwardPoint(basicResult);
-                lastPoint = basicResult;
-            }
+            int i = 0;
+//            while (currentDistance <= endingDistance){
+////                System.out.println(i++);
+//                MovementPoint basicResult;
+//                if (comeToStop && Math.abs(currentDistance - endingDistance) <= 1e-9){ // TODO - Determine best epsilon / do we need this here?
+//                    System.out.println("STOPPING POINT!");
+//                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, new MovementPoint(distanceMap.getPositionAtDistance(currentDistance),0,0,0,0,0,0), idealMap);
+//                }else{
+//                    basicResult = simulateStep(sampleRate,currentDistance,distanceMap, lastPoint, idealMap);
+//                }
+//                System.out.println(basicResult.getVelX() + " " + basicResult.getVelY());
+////                MovementPoint pt = idealMap.getPoint(currentDistance);
+////                System.out.println(currentDistance + " " + pt.getVelX() + " " + pt.getVelY());
+//                currentDistance += Coordinate.getDistanceBetweenCoordinates(basicResult.getPosition(), lastPoint.getPosition());
+//                currentProfile.addForwardPoint(basicResult);
+//                lastPoint = basicResult;
+//            }
             System.out.println("Finished forward simulation");
             // backward pass
 
@@ -116,7 +124,9 @@ public class MotionProfileProcessor {
             }else{
                 lastPoint = idealMap.getPoint(point);
             }
+            currentProfile.addBackPassPoint(lastPoint);
             while (currentDistance > startingDistance+1e-9){
+//                System.out.println(i++);
                 MovementPoint basicResult;
 
                 if (comeToStop && Math.abs(currentDistance - endingDistance) <= 1e-9){
@@ -131,7 +141,7 @@ public class MotionProfileProcessor {
             }
             System.out.println("Finished backward simulation");
             simulations.add(currentProfile);
-//            break;
+            break;
         }
         System.out.println("Finished all simulations");
         MovementMap finalizedVelocityMap = VelocityMap.generateMovementFromVelocityMaps(simulations.toArray(new VelocityMap[0]), sampleRate);
@@ -210,7 +220,7 @@ public class MotionProfileProcessor {
         double endDistance = distanceMap.getMaxDistance();
         Coordinate lastPoint = distanceMap.getPositionAtDistance(startDistance);
         // TODO - Consider that distanceMap only has 100 samplescoordinates, but this may loop many times more than that (eg. 4k for 40 inches)
-        for (double p = startDistance + sampleRate*100; p < endDistance; p += sampleRate*100) {
+        for (double p = startDistance + sampleRate; p < endDistance; p += sampleRate) {
             Coordinate newPoint = distanceMap.getPositionAtDistance(p);
             double headingDegrees = getHeadingToCoordinate(lastPoint, newPoint);
             double curvature = distanceMap.getCurvatureAtDistance(p);
@@ -266,31 +276,34 @@ public class MotionProfileProcessor {
         
         // ==== LINEAR VELOCITY CALCULATIONS ====
         // Get heading to the next point along the path
-        double heading = getHeadingToCoordinate(point.getPosition(), distanceMap.getPositionAtDistance(newDistance));
+        double heading = getHeadingToCoordinate(point.getPosition(), distanceMap.getPositionAtDistance(newDistance+1));
         double initialVelocityDirection = Math.toDegrees(Math.atan2(point.getVelY(), point.getVelX()));
         
         // Calculate maximum stable acceleration given current heading and angle error
         // TODO: get the rotation error first?
         double tempAcceleration = movementParameters.getMaxStableAcceleration(heading, 0);
-        
+        tempAcceleration = 30; // inches / s^2?
+
         // Apply acceleration over the time step to get final velocities
-        double finalVelocityX = point.getVelX() + (tempAcceleration * Math.cos(Math.toRadians(heading - point.getPosition().getAngle())) * step);
-        double finalVelocityY = point.getVelY() + (tempAcceleration * Math.sin(Math.toRadians(heading - point.getPosition().getAngle())) * step);
+        double finalVelocityX = point.getVelX() + (tempAcceleration * step * (Math.cos(Math.toRadians(heading - point.getPosition().getAngle())) - Math.sin(Math.toRadians(heading - point.getPosition().getAngle()))));
+        double finalVelocityY = point.getVelY() + (tempAcceleration * step * (Math.sin(Math.toRadians(heading - point.getPosition().getAngle())) + Math.cos(Math.toRadians(heading - point.getPosition().getAngle()))));
         double finalVelocityMagnitude = Math.hypot(finalVelocityX, finalVelocityY);
         
         // Clamp velocities to ideal profile to prevent exceeding path constraints
-        if (idealMap.getPoint(newDistance).getVelocityMagnitude() < finalVelocityMagnitude){
-            finalVelocityX = idealMap.getPoint(newDistance).getVelX();
-            finalVelocityY = idealMap.getPoint(newDistance).getVelY();
-        }
+//        if (idealMap.getPoint(newDistance).getVelocityMagnitude() < finalVelocityMagnitude){
+//            finalVelocityX = idealMap.getPoint(newDistance).getVelX();
+//            finalVelocityY = idealMap.getPoint(newDistance).getVelY();
+//        }
         
         // Calculate velocity deltas and position displacement using average velocity
         double deltaVelocityX = finalVelocityX - point.getVelX();
         double deltaVelocityY = finalVelocityY - point.getVelY();
         double finalX = point.getPosition().getX() + step * (point.getVelX() + (0.5) * deltaVelocityX);
         double finalY = point.getPosition().getY() + step * (point.getVelY() + (0.5) * deltaVelocityY);
-        double finalAccelerationX = deltaVelocityX / absStep;
-        double finalAccelerationY = deltaVelocityY / absStep;
+        double finalAccelerationX = deltaVelocityX / step;
+        double finalAccelerationY = deltaVelocityY / step;
+
+        System.out.println("FinalAccelerationX: " +finalAccelerationX+ "  finalAccelerationY: " + finalAccelerationY);
         
         // ==== ROTATIONAL VELOCITY CALCULATIONS ====
         // Get current angular velocity and calculate angular acceleration

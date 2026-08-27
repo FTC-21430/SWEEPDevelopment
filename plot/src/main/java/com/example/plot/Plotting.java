@@ -27,7 +27,7 @@ public class Plotting {
         Path path = new PathBuilder(new DefaultRobotMovementParameters())
                 .start(0,0,0)
                 .splineToAngle(-20,20,0, 1)
-                .splineToAngle(20,20,0, 1)
+//                .splineToAngle(20,20,0, 1)
                 .end(0, 40, 0)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(path, 0.01, LOCAL_VENV_PYTHON);
