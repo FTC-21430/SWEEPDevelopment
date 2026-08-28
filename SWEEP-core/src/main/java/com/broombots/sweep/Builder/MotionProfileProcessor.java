@@ -273,16 +273,19 @@ public class MotionProfileProcessor {
         // Calculate the new distance along the path (positive step = forward pass, negative step = backward pass)
         double newDistance = distance + step;
         double absStep = Math.abs(step);
-        
+
+        double direction = step > 0? 1:-1;
+
         // ==== LINEAR VELOCITY CALCULATIONS ====
         // Get heading to the next point along the path
-        double heading = getHeadingToCoordinate(point.getPosition(), distanceMap.getPositionAtDistance(newDistance+1));
+        double heading = getHeadingToCoordinate(point.getPosition(), distanceMap.getPositionAtDistance(newDistance+direction));
+        if (direction < 0) heading += 180;
         double initialVelocityDirection = Math.toDegrees(Math.atan2(point.getVelY(), point.getVelX()));
         
         // Calculate maximum stable acceleration given current heading and angle error
         // TODO: get the rotation error first?
         double tempAcceleration = movementParameters.getMaxStableAcceleration(heading, 0);
-        tempAcceleration = 30; // inches / s^2?
+//        tempAcceleration = 30; // inches / s^2?
 
         // Apply acceleration over the time step to get final velocities
         double finalVelocityX = point.getVelX() + (tempAcceleration * step * (Math.cos(Math.toRadians(heading - point.getPosition().getAngle())) - Math.sin(Math.toRadians(heading - point.getPosition().getAngle()))));
