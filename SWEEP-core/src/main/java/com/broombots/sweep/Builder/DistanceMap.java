@@ -9,9 +9,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 public class DistanceMap {
-    private ArrayList<Coordinate> coordinates =new ArrayList<>();
-    private ArrayList<Double> distances = new ArrayList<>();
-    private ArrayList<Double> curvatures = new ArrayList<>();
+    // scope not defined because they need to be accessed by a class of this type.
+    ArrayList<Coordinate> coordinates =new ArrayList<>();
+    ArrayList<Double> distances = new ArrayList<>();
+    ArrayList<Double> curvatures = new ArrayList<>();
     private final double tSampleRate = 0.01;
     public DistanceMap(Segment[] segments){
         double segmentDistance = 0;
@@ -44,6 +45,11 @@ public class DistanceMap {
     }
     private double getPartialRatio(double distance, Double[] closestDistances){
         return (distance-closestDistances[0])/(closestDistances[1]-closestDistances[0]);
+    }
+    public void appendDistanceMap(DistanceMap map){
+        coordinates.addAll(map.coordinates);
+        distances.addAll(map.distances);
+        curvatures.addAll(map.curvatures);
     }
     public ArrayList<Double> getSegmentDistancesWithLocalMaximaCurvature(){
         ArrayList<Double> localMaximaCurvatures = new ArrayList<>(); // makes shallow list copy that can be sorted because double is an immutable type

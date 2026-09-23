@@ -26,7 +26,7 @@ public class Plotting {
     public static void main(String[] args) throws PythonExecutionException, IOException {
         Path path = new PathBuilder(new DefaultRobotMovementParameters())
                 .start(0,0,0)
-                .splineToAngle(-20,20,0, 1)
+//                .splineToAngle(0,20,0, 1)
 //                .splineToAngle(20,20,0, 1)
                 .end(0, 40, 0)
                 .build();

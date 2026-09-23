@@ -1,3 +1,4 @@
+// Copyright Tobin Rumsey 2026 (c) all rights reserved.
 package com.broombots.sweep.Classes;
 
 import com.qualcomm.robotcore.util.ElapsedTime;

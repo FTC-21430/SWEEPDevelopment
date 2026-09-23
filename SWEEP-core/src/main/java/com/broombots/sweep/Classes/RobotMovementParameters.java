@@ -3,7 +3,7 @@ package com.broombots.sweep.Classes;
 public interface RobotMovementParameters {
     // Max velocity parameters
     public double getMaxVelocity(double direction, double angleError);
-    public double getAngleVelocity();
+    public double getMaxAngleVelocity();
 
     // Max Acceleration parameters
     public double getMaxStableAcceleration(double direction, double angleError);

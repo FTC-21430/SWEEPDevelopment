@@ -4,7 +4,7 @@ import com.broombots.sweep.Classes.RobotMovementParameters;
 
 public class DefaultRobotMovementParameters implements RobotMovementParameters {
     double robotMass;
-    private final double averageMotorForce = 3.5; // N Per Wheel on ground;
+    private final double averageMotorForce = 8.5; // N Per Wheel on ground;
     private final double robotTopSpeedStraight = 48; // inches/s
     private final double timeForFullTurn = 1.2; // Seconds
     public DefaultRobotMovementParameters(double robotMass){
@@ -18,7 +18,7 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
         // 1.5 m/s for the average robot
         return (robotTopSpeedStraight / 2 * Math.sqrt(2)) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
     }
-    public double getAngleVelocity(){
+    public double getMaxAngleVelocity(){
         return 360/timeForFullTurn; // degrees per second
     }
     public double getMaxStableAcceleration(double direction, double angleError){
