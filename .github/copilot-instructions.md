@@ -61,7 +61,7 @@ New waypoint types always go in `SWEEP.Splines` and implement the `Waypoint` int
 
 - **Guard clauses first**: Check for null, empty, or invalid inputs at the top of the method and return early
   ```java
-  if (path == null || path.length == 0) return new SimpleMatrix(new double[]{0, 0, 0});
+  if (sequence == null || sequence.length == 0) return new SimpleMatrix(new double[]{0, 0, 0});
   ```
 - Prefer ternary expressions for simple clamping or fallback assignments:
   ```java

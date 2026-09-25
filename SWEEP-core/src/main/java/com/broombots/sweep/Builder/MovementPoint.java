@@ -1,12 +1,12 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 
 public class MovementPoint {
-    private final Coordinate position;
+    private final Pos2D position;
     private final double velX, velY, velAngle;
     private double accelX, accelY, accelAngle;
-    public MovementPoint(Coordinate position, double velX, double velY, double velAngle, double accelX, double accelY, double accelAngle){
+    public MovementPoint(Pos2D position, double velX, double velY, double velAngle, double accelX, double accelY, double accelAngle){
         this.position = position;
         this.velX = velX;
         this.velY = velY;
@@ -16,7 +16,7 @@ public class MovementPoint {
         this.accelAngle = accelAngle;
 
     }
-    public Coordinate getPosition(){
+    public Pos2D getPosition(){
         return position;
     }
     public double getVelX(){
@@ -49,9 +49,9 @@ public class MovementPoint {
         return Math.hypot(velX,velY);
     }
     public static MovementPoint lerpMovementPoint(MovementPoint startPoint, MovementPoint endPoint, double x){
-        double posX = lerp(startPoint.getPosition().getX(), endPoint.getPosition().getX(), x);
-        double posY = lerp(startPoint.getPosition().getY(), endPoint.getPosition().getY(), x);
-        double posAngle = lerp(startPoint.getPosition().getAngle(), endPoint.getPosition().getAngle(),x);
+        double posX = lerp(startPoint.getPosition().x, endPoint.getPosition().x, x);
+        double posY = lerp(startPoint.getPosition().y, endPoint.getPosition().y, x);
+        double posAngle = lerp(startPoint.getPosition().angle, endPoint.getPosition().angle,x);
         double velX = lerp(startPoint.getVelX(), endPoint.getVelX(), x);
         double velY = lerp(startPoint.getVelY(), endPoint.getVelY(), x);
         double velAngle = lerp(startPoint.getVelAngle(), endPoint.getVelAngle(),x);
@@ -59,7 +59,7 @@ public class MovementPoint {
         double accelY = lerp(startPoint.getAccelY(),endPoint.getAccelY(), x);
         double accelAngle = lerp(startPoint.getAccelAngle(), endPoint.getAccelAngle(), x);
 
-        return new MovementPoint(new Coordinate(posX,posY, posAngle), velX,velY,velAngle,accelX,accelY,accelAngle);
+        return new MovementPoint(new Pos2D(posX,posY, posAngle), velX,velY,velAngle,accelX,accelY,accelAngle);
     }
     public static double lerp(double start, double end, double x){
         double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0

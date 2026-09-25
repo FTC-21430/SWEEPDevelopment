@@ -1,6 +1,6 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 
 import java.util.ArrayList;
 
@@ -46,7 +46,7 @@ public class MovementMap {
         result.addMovementPoints(second.getAllPoints());
         return result;
     }
-   public void addWaitPeriod(Coordinate position, double time){
+   public void addWaitPeriod(Pos2D position, double time){
         MovementPoint point = new MovementPoint(position, 0,0,0 ,0 ,0 ,0);
         for (int i = 0; i < Math.round(time/sampleRate); i++){
             addMovementPoint(point);
@@ -60,16 +60,16 @@ public class MovementMap {
     }
 
     public static MovementPoint lerpMovementPoint(MovementPoint startPoint, MovementPoint endPoint, double x){
-        double posX     = lerp(startPoint.getPosition().getX(),     endPoint.getPosition().getX(),     x);
-        double posY     = lerp(startPoint.getPosition().getY(),     endPoint.getPosition().getY(),     x);
-        double posAngle = lerp(startPoint.getPosition().getAngle(), endPoint.getPosition().getAngle(), x);
+        double posX     = lerp(startPoint.getPosition().x,     endPoint.getPosition().x,     x);
+        double posY     = lerp(startPoint.getPosition().y,     endPoint.getPosition().y,     x);
+        double posAngle = lerp(startPoint.getPosition().angle, endPoint.getPosition().angle, x);
         double velX     = lerp(startPoint.getVelX(),     endPoint.getVelX(),     x);
         double velY     = lerp(startPoint.getVelY(),     endPoint.getVelY(),     x);
         double velAngle = lerp(startPoint.getVelAngle(), endPoint.getVelAngle(), x);
         double accelX   = lerp(startPoint.getAccelX(),   endPoint.getAccelX(),   x);
         double accelY   = lerp(startPoint.getAccelY(),   endPoint.getAccelY(),   x);
         double accelAngle = lerp(startPoint.getAccelAngle(), endPoint.getAccelAngle(), x);
-        return new MovementPoint(new Coordinate(posX, posY, posAngle), velX, velY, velAngle, accelX, accelY, accelAngle);
+        return new MovementPoint(new Pos2D(posX, posY, posAngle), velX, velY, velAngle, accelX, accelY, accelAngle);
     }
 
     private static double lerp(double start, double end, double x){

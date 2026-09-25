@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
@@ -16,7 +16,7 @@ public class SplineWaypoint implements Waypoint {
 	/**
 	 * Target pose for this waypoint (x/y in inches, heading in degrees).
 	 */
-	private final Coordinate coordinate;
+	private final Pos2D coordinate;
 
 	/**
 	 * Creates a spline waypoint from primitive pose values.
@@ -26,7 +26,7 @@ public class SplineWaypoint implements Waypoint {
 	 * @param speed segment speed scale relative to robot top speed
 	 */
 	public SplineWaypoint(double x, double y, double speed) {
-		this.coordinate = new Coordinate(x, y, 0);
+		this.coordinate = new Pos2D(x, y, 0);
 		this.speed = speed;
 	}
 
@@ -36,7 +36,7 @@ public class SplineWaypoint implements Waypoint {
 	 * @param coordinate target pose for this waypoint
 	 * @param speed segment speed scale relative to robot top speed
 	 */
-	public SplineWaypoint(Coordinate coordinate, double speed) {
+	public SplineWaypoint(Pos2D coordinate, double speed) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 
 		this.coordinate = coordinate;
@@ -47,7 +47,7 @@ public class SplineWaypoint implements Waypoint {
 	 * @return target pose for this waypoint
 	 */
 	@Override
-	public Coordinate getCoordinate() {
+	public Pos2D getCoordinate() {
 		return coordinate;
 	}
 
@@ -56,7 +56,7 @@ public class SplineWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getX() {
-		return coordinate.getX();
+		return coordinate.x;
 	}
 
 	/**
@@ -64,7 +64,7 @@ public class SplineWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getY() {
-		return coordinate.getY();
+		return coordinate.y;
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class SplineWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getAngle() {
-		return coordinate.getAngle();
+		return coordinate.angle;
 	}
 
 	/**

@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -12,10 +12,10 @@ public interface Segment {
 	/**
 	 * Computes segment position at an absolute timestamp.
 	 *
-	 * @param overallTime absolute time in seconds
+	 * @param t absolute time in seconds
 	 * @return pose at the requested time
 	 */
-	Coordinate getPosition(double overallTime);
+	Pos2D getPosition(double t);
 	/**
 	 * Calculates the distance traveled between two absolute timestamps.
 	 *
@@ -24,9 +24,9 @@ public interface Segment {
 	 * @return distance traveled between the two timestamps
 	 */
 	default double calculateDistance(double tStart, double tEnd) {
-		Coordinate start = getPosition(tStart);
-		Coordinate end = getPosition(tEnd);
-		return Coordinate.getDistanceBetweenCoordinates(start, end);
+		Pos2D start = getPosition(tStart);
+		Pos2D end = getPosition(tEnd);
+		return Pos2D.getDistanceBetweenCoordinates(start,end);
 	}
 	double getSpeedRate();
 	/**

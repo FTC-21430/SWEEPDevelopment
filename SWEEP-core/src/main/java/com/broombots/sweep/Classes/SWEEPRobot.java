@@ -1,6 +1,6 @@
 package com.broombots.sweep.Classes;
 
-import com.broombots.sweep.Builder.Path;
+import com.broombots.sweep.Builder.Sequence;
 
 /**
  * SWEEPRobot class is an abstract class that extends the Robot class and provides additional functionality
@@ -9,7 +9,7 @@ import com.broombots.sweep.Builder.Path;
  */
 public abstract class SWEEPRobot extends Robot {
     // Current path being followed by the robot
-    private Path currentPath;
+    private Sequence currentSequence;
     // Default range and time for actions to be triggered during autonomous operation
     private double defaultActionRange = 6; // Default range for actions to be triggered
     private double defaultActionTime = 0; // Default time for actions to be triggered
@@ -25,10 +25,10 @@ public abstract class SWEEPRobot extends Robot {
 
     /**
      * Sets the current path for the robot to follow and starts the path.
-     * @param path the path for the robot to follow
+     * @param sequence the path for the robot to follow
      */
-    public void setPath(Path path){
-        currentPath = path;
+    public void setPath(Sequence sequence){
+        currentSequence = sequence;
 //        path.start();
     }
     /**

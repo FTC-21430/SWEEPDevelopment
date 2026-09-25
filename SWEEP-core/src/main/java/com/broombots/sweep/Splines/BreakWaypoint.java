@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
@@ -11,14 +11,14 @@ public class BreakWaypoint implements Waypoint {
 	/**
 	 * Target pose for this waypoint (x/y in inches, heading in degrees).
 	 */
-	private final Coordinate coordinate;
+	private final Pos2D coordinate;
 
 	/**
 	 * Creates a break waypoint from an existing coordinate.
 	 *
 	 * @param coordinate target pose for this waypoint
 	 */
-	public BreakWaypoint(Coordinate coordinate) {
+	public BreakWaypoint(Pos2D coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 
 		this.coordinate = coordinate;
@@ -28,7 +28,7 @@ public class BreakWaypoint implements Waypoint {
 	 * @return target pose for this waypoint
 	 */
 	@Override
-	public Coordinate getCoordinate() {
+	public Pos2D getCoordinate() {
 		return coordinate;
 	}
 
@@ -37,7 +37,7 @@ public class BreakWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getX() {
-		return coordinate.getX();
+		return coordinate.x;
 	}
 
 	/**
@@ -45,7 +45,7 @@ public class BreakWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getY() {
-		return coordinate.getY();
+		return coordinate.y;
 	}
 
 	/**
@@ -53,7 +53,7 @@ public class BreakWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getAngle() {
-		return coordinate.getAngle();
+		return coordinate.angle;
 	}
 
 	/**

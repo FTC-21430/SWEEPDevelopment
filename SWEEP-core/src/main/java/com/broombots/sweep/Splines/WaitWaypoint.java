@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
@@ -11,7 +11,7 @@ public class WaitWaypoint implements Waypoint {
 	/**
 	 * Target pose for this waypoint (x/y in inches, heading in degrees).
 	 */
-	private final Coordinate coordinate;
+	private final Pos2D coordinate;
 
 	/**
 	 * Time to hold at this waypoint in seconds.
@@ -27,7 +27,7 @@ public class WaitWaypoint implements Waypoint {
 	 * @param duration hold duration in seconds
 	 */
 	public WaitWaypoint(double x, double y, double angle, double duration) {
-		this(new Coordinate(x, y, angle), duration);
+		this(new Pos2D(x, y, angle), duration);
 	}
 
 	/**
@@ -36,7 +36,7 @@ public class WaitWaypoint implements Waypoint {
 	 * @param coordinate target pose for this waypoint
 	 * @param duration hold duration in seconds
 	 */
-	public WaitWaypoint(Coordinate coordinate, double duration) {
+	public WaitWaypoint(Pos2D coordinate, double duration) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 
 		this.coordinate = coordinate;
@@ -47,7 +47,7 @@ public class WaitWaypoint implements Waypoint {
 	 * @return target pose for this waypoint
 	 */
 	@Override
-	public Coordinate getCoordinate() {
+	public Pos2D getCoordinate() {
 		return coordinate;
 	}
 
@@ -56,7 +56,7 @@ public class WaitWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getX() {
-		return coordinate.getX();
+		return coordinate.x;
 	}
 
 	/**
@@ -64,7 +64,7 @@ public class WaitWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getY() {
-		return coordinate.getY();
+		return coordinate.y;
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class WaitWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getAngle() {
-		return coordinate.getAngle();
+		return coordinate.angle;
 	}
 
 	/**

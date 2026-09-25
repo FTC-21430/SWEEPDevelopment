@@ -1,24 +1,24 @@
 package org.firstinspires.ftc.teamcode.ExampleCode;
 
+import com.broombots.sweep.Builder.Sequence;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import com.broombots.sweep.Builder.Path;
 import com.broombots.sweep.Classes.SWEEPRobot;
 
 /**
  * Abstract class designed for creating new autonomous routes with SWEEP
  */
 public abstract class SWEEPRoute extends LinearOpMode {
-    public Path path;
+    public Sequence sequence;
     public SWEEPRobot robot;
     @Override
     public void runOpMode() throws InterruptedException {
         defineRoute();
-        if (path == null) throw new RuntimeException("Path is not defined. Override defineRoute() method and create a path.");
+        if (sequence == null) throw new RuntimeException("Path is not defined. Override defineRoute() method and create a path.");
         if (robot == null) throw new RuntimeException("Robot is not defined. Override defineRoute() method and create a robot.");
         robot.initialize();
         waitForStart();
-        robot.setPath(path);
+        robot.setPath(sequence);
         while (opModeIsActive()) {
             robot.autonomousUpdate();
         }
@@ -29,6 +29,6 @@ public abstract class SWEEPRoute extends LinearOpMode {
      */
     public void defineRoute() {
         robot = null;
-        path = null;
+        sequence = null;
     }
 }

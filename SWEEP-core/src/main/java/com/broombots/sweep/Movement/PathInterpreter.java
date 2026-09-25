@@ -1,16 +1,17 @@
 package com.broombots.sweep.Movement;
 
 import com.broombots.sweep.Builder.MovementPoint;
-import com.broombots.sweep.Builder.Path;
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Builder.Sequence;
 import com.broombots.sweep.Classes.LocalizationPacket;
+import com.broombots.sweep.Classes.PathPoint;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Timer;
 
 public class PathInterpreter {
-    private Path currentPath;
+    private Sequence currentPath;
     private Timer timer;
-    public void startPath(Path path){
-        currentPath = path;
+    public void startPath(Sequence sequence){
+        currentPath = sequence;
         timer = new Timer();
         timer.reset();
     }
@@ -20,10 +21,10 @@ public class PathInterpreter {
     public String updateSimulation(LocalizationPacket localizationPacket){
         return currentPath.updateActionsInSimulation(localizationPacket);
     }
-    public Coordinate getRobotPosition(){
-        return getMovementPoint().getPosition();
+    public Pos2D getRobotPosition(){
+        return getPathPoint().position;
     }
-    public MovementPoint getMovementPoint(){
+    public PathPoint getPathPoint(){
         return currentPath.getMovement(timer.getSeconds());
     }
 }

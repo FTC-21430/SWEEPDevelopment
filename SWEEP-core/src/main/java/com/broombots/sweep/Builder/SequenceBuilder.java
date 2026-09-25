@@ -1,6 +1,7 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.PathPoint;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Classes.SWEEPAction;
 import com.broombots.sweep.Classes.Waypoint;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
  * It uses waypoints to define the path and actions to be executed at specific points along the path.
  * Class methods will build upon itself until the build() method is called, which will return a Path object that can be used to follow the defined path.
  */
-public class PathBuilder {
+public class SequenceBuilder {
     /**
      * Length of standard FTC field, used to clip all passed in coordinates into the range of the field.
      * This is to prevent the robot from trying to drive outside the field boundaries.
@@ -46,24 +47,24 @@ public class PathBuilder {
      * This is used to set the position of actions that are added to the path.
      * Allows the user to not specify a position for an action or wait they want to be at the last waypoint added to the path.
      */
-    private Coordinate previousCoordinate;
+    private Pos2D previousCoordinate;
     /**
      * The rate at which a path will be simulated and evaluated. Lower numbers means more accuracy with a tradeoff for slower processing times mainly during path rendering.
      * Default value is 0.01
      */
     private double sampleRate = 0.0005;
     private RobotMovementParameters movementParameters;
-    private MovementPoint startingPoint;
+    private PathPoint startingPoint;
     /**
      * Constructs a new PathBuilder object.
      * Initializes the waypoints and actions arrays, and sets the previous coordinate to (0,0,0).
      * @param movementParameters the definitions of the physical movement capabilities of the robot that will follow this path.
      */
-    public PathBuilder(RobotMovementParameters movementParameters){
-        previousCoordinate = new Coordinate(0,0);
+    public SequenceBuilder(RobotMovementParameters movementParameters){
+        previousCoordinate = new Pos2D(0,0,0);
         this.movementParameters = movementParameters;
     }
-    public PathBuilder setSampleRate(double sampleRate){
+    public SequenceBuilder setSampleRate(double sampleRate){
         this.sampleRate = sampleRate;
         return this;
     }
@@ -76,7 +77,7 @@ public class PathBuilder {
      * @param actionClass The action to be added to the path.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder addAction(SWEEPAction actionClass){
+    public SequenceBuilder addAction(SWEEPAction actionClass){
         if (actionClass == null) throw new NullPointerException("Action cannot be null");
         if (!actionClass.isPositionSet()) actionClass.setPosition(previousCoordinate);
         actions.add(actionClass);
@@ -90,11 +91,11 @@ public class PathBuilder {
      * @param speed The speed at which the robot should travel to the waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder splineTo(double x, double y, double speed){
+    public SequenceBuilder splineTo(double x, double y, double speed){
         speed = Math.min(speed, 1);
         speed = Math.max(speed,0);
         waypoints.add(new SplineWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),speed));
-        previousCoordinate = new Coordinate(x,y,0);
+        previousCoordinate = new Pos2D(x,y,0);
         return this;
     }
 
@@ -105,9 +106,9 @@ public class PathBuilder {
      * @param speed The speed at which the robot should travel to the waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder splineTo(Coordinate definedCoordinate, double speed){
+    public SequenceBuilder splineTo(Pos2D definedCoordinate, double speed){
         speed = clipSpeedToRange(speed);
-        waypoints.add(new SplineWaypoint(definedCoordinate.getX(),definedCoordinate.getY(),speed));
+        waypoints.add(new SplineWaypoint(definedCoordinate.x,definedCoordinate.y,speed));
         previousCoordinate = definedCoordinate;
         return this;
     }
@@ -120,10 +121,10 @@ public class PathBuilder {
      * @param speed The speed at which the robot should travel to the waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder splineToAngle(double x, double y, double angle, double speed){
+    public SequenceBuilder splineToAngle(double x, double y, double angle, double speed){
         speed = clipSpeedToRange(speed);
         waypoints.add(new SplineAngleWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),angle,speed));
-        previousCoordinate = new Coordinate(x,y,0);
+        previousCoordinate = new Pos2D(x,y,0);
         return this;
     }
     /**
@@ -133,9 +134,9 @@ public class PathBuilder {
      * @param speed The speed at which the robot should travel to the waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder splineToAngle(Coordinate definedCoordinate, double speed){
+    public SequenceBuilder splineToAngle(Pos2D definedCoordinate, double speed){
         speed = clipSpeedToRange(speed);
-        waypoints.add(new SplineAngleWaypoint(definedCoordinate.getX(),definedCoordinate.getY(),definedCoordinate.getAngle(),speed));
+        waypoints.add(new SplineAngleWaypoint(definedCoordinate.x,definedCoordinate.y,definedCoordinate.angle,speed));
         previousCoordinate = definedCoordinate;
         return this;
     }
@@ -144,7 +145,7 @@ public class PathBuilder {
      * break waypoints will force the robot to slow down and continue on the path, ignoring previous waypoint tangents and angles.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder addBreak(){
+    public SequenceBuilder addBreak(){
         waypoints.add(new BreakWaypoint(previousCoordinate));
         return this;
     }
@@ -154,7 +155,7 @@ public class PathBuilder {
      * @param duration The duration in seconds to wait at the previous waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder waitAt(double duration){
+    public SequenceBuilder waitAt(double duration){
         waypoints.add(new WaitWaypoint(previousCoordinate, duration));
         return this;
     }
@@ -166,13 +167,17 @@ public class PathBuilder {
      * @param angle The angle at which the robot should be oriented at the start waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder start(double x, double y, double angle){
-        start(new MovementPoint(new Coordinate(x,y,angle),0,0,0,0,0,0));
+    public SequenceBuilder start(double x, double y, double angle){
+        PathPoint point = new PathPoint();
+        point.time = 0;
+        point.position = new Pos2D(x, y, angle);
+        point.velocity = new Pos2D(0,0,0);
+        start(point);
         return this;
     }
-    public PathBuilder start(MovementPoint startingPoint){
-        waypoints.add(new StartWaypoint(startingPoint.getPosition().getX(), startingPoint.getPosition().getY(), startingPoint.getPosition().getAngle()));
-        previousCoordinate = new Coordinate(startingPoint.getPosition().getX(), startingPoint.getPosition().getY(), startingPoint.getPosition().getAngle());
+    public SequenceBuilder start(PathPoint startingPoint){
+        waypoints.add(new StartWaypoint(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle));
+        previousCoordinate = new Pos2D(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle);
         this.startingPoint = startingPoint;
         return this;
     }
@@ -183,7 +188,7 @@ public class PathBuilder {
      * @param coordinate The coordinate of the start waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder start(Coordinate coordinate){
+    public SequenceBuilder start(Pos2D coordinate){
         waypoints.add(new StartWaypoint(coordinate));
         previousCoordinate = coordinate;
         return this;
@@ -197,9 +202,9 @@ public class PathBuilder {
      * @param angle The angle at which the robot should be oriented at the end waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder end(double x, double y, double angle){
+    public SequenceBuilder end(double x, double y, double angle){
         waypoints.add(new EndWaypoint(x,y,angle));
-        previousCoordinate = new Coordinate(x,y,angle);
+        previousCoordinate = new Pos2D(x,y,angle);
         return this;
     }
     /**
@@ -209,7 +214,7 @@ public class PathBuilder {
      * @param coordinate The coordinate of the end waypoint.
      * @return The current PathBuilder instance, allowing for method chaining.
      */
-    public PathBuilder end(Coordinate coordinate){
+    public SequenceBuilder end(Pos2D coordinate){
         waypoints.add(new EndWaypoint(coordinate));
         previousCoordinate = coordinate;
         return this;
@@ -220,7 +225,7 @@ public class PathBuilder {
      * Path time will start at 0 seconds.
      * @return A Path object that can be used to follow the defined path.
      */
-    public Path build(){
+    public Sequence build(){
         return build(0);
     }
     /**
@@ -229,7 +234,7 @@ public class PathBuilder {
      * @param time The starting time for the path, in seconds.
      * @return A Path object that can be used to follow the defined path.
      */
-    public Path build(double time) {
+    public Sequence build(double time) {
         if (waypoints == null)
             throw new NullPointerException("Empty waypoints");
         if (waypoints.size() < 2)
@@ -259,8 +264,8 @@ public class PathBuilder {
             }
         }
 
-        MotionProfileProcessor profileProcessor = new MotionProfileProcessor(movementParameters);
-        return new Path(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint),actions.toArray(new SWEEPAction[0]));
+        PathProcessor profileProcessor = new PathProcessor(movementParameters);
+        return new Sequence(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint),actions.toArray(new SWEEPAction[0]));
     }
     /**
      * Creates a new segment based on the waypoint type at the specified index.
@@ -324,4 +329,3 @@ public class PathBuilder {
     }
 
 }
-

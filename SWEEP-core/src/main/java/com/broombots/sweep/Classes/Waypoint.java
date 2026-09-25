@@ -36,10 +36,10 @@ public interface Waypoint {
      */
     public double getAngle();
     /**
-     * Gets the Coordinate object representing the waypoint's position and heading.
+     * Gets the Pos2D object representing the waypoint's position and heading.
      * @return
      */
-    public Coordinate getCoordinate();
+    public Pos2D getCoordinate();
 
     /**
      * Gets the speed at which the robot should move to this waypoint. If the waypoint does not require a specific speed, it returns 0 by default.

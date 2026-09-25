@@ -1,28 +1,20 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Splines.Segment;
 
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 
 public class DistanceMap {
     // scope not defined because they need to be accessed by a class of this type.
-    ArrayList<Coordinate> coordinates =new ArrayList<>();
+    ArrayList<Pos2D> positions =new ArrayList<>();
     ArrayList<Double> distances = new ArrayList<>();
-    ArrayList<Double> curvatures = new ArrayList<>();
+
     private final double tSampleRate = 0.01;
-    public DistanceMap(Segment[] segments){
-        double segmentDistance = 0;
-        for (Segment seg : segments){
-            addSegmentToMap(seg, segmentDistance);
-            segmentDistance = getMaxDistance();
-        }
-    }
     public DistanceMap(Segment segment){
-        addSegmentToMap(segment, 0);
+        addSegmentToMap(segment);
     }
     public double getMaxDistance(){ // return end of distance array
         return distances.get(distances.size()-1);
@@ -30,61 +22,22 @@ public class DistanceMap {
     public double getMinDistance(){
         return distances.get(0);
     }
-    public Coordinate getPositionAtDistance(double distance){
-        if (isDistanceCalculated(distance)) return coordinates.get(distances.indexOf(distance));
+    public Pos2D getPositionAtDistance(double distance){
+        if (isDistanceCalculated(distance)) return positions.get(distances.indexOf(distance));
         Double[] closestDistances = closestDistancesTo(distance);
         double ratio = getPartialRatio(distance, closestDistances);
-        return lerpCoordinate(coordinates.get(distances.indexOf(closestDistances[0])),coordinates.get(distances.indexOf(closestDistances[1])), ratio);
-    }
-    public double getCurvatureAtDistance(double distance){
-        if (isDistanceCalculated(distance)) return curvatures.get(distances.indexOf(distance));
-
-        Double[] closestCurvatures = closestCurvaturesTo(distance);
-        double ratio = getPartialRatio(distance, closestCurvatures);
-        return lerp(closestCurvatures[0], closestCurvatures[1], ratio);
+        return Pos2D.lerpPos2D(ratio, positions.get(distances.indexOf(closestDistances[0])), positions.get(distances.indexOf(closestDistances[1])));
     }
     private double getPartialRatio(double distance, Double[] closestDistances){
         return (distance-closestDistances[0])/(closestDistances[1]-closestDistances[0]);
     }
-    public void appendDistanceMap(DistanceMap map){
-        coordinates.addAll(map.coordinates);
-        distances.addAll(map.distances);
-        curvatures.addAll(map.curvatures);
-    }
-    public ArrayList<Double> getSegmentDistancesWithLocalMaximaCurvature(){
-        ArrayList<Double> localMaximaCurvatures = new ArrayList<>(); // makes shallow list copy that can be sorted because double is an immutable type
-        ArrayList<Double> distanceAtLocalMaximas = new ArrayList<>();
-        for (int i = 1; i < curvatures.size()-2; i++){
-            if (Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i-1)) && Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i+1))){
-                localMaximaCurvatures.add(Math.abs(curvatures.get(i)));
-                distanceAtLocalMaximas.add(distances.get(i));
-            }
-        }
-        System.out.println(localMaximaCurvatures.size());
-//        ArrayList<Double> result = new ArrayList<>();
-//        for (int j = 0; j < Math.min(2, localMaximaCurvatures.size()); j++){
-//            int bestIdx = 0;
-//            for (int i = 1; i < localMaximaCurvatures.size(); i++){
-//                if (localMaximaCurvatures.get(i) > localMaximaCurvatures.get(bestIdx)){
-//                    bestIdx = i;
-//                }
-//            }
-//            result.add(distanceAtLocalMaximas.get(bestIdx));
-//            localMaximaCurvatures.remove(bestIdx);
-//            distanceAtLocalMaximas.remove(bestIdx);
-//        }
-//        while (result.size() < 2){
-//            result.add(0.0);
-//        }
-        return distanceAtLocalMaximas;
-    }
-    private void addSegmentToMap(Segment segment, double startDistance){
+    private void addSegmentToMap(Segment segment){
         double currentDistance = 0;
         for (double t = 0; t <= 1; t += tSampleRate){
-            coordinates.add(segment.getPosition(t));
+            positions.add(segment.getPosition(t));
             currentDistance += segment.calculateDistance(t-tSampleRate,t);
             distances.add(currentDistance);
-            curvatures.add(getCurvature(segment, t));
+//            curvatures.add(getCurvature(segment, t)); // left out at the current stage of development
         }
     }
     private boolean isDistanceCalculated(double distance){
@@ -111,6 +64,22 @@ public class DistanceMap {
         search.add(distances.get(high));
         return search.toArray(new Double[0]);
     }
+
+    private double lerp(double start, double end, double x){
+        double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
+        return start + (end-start) * xInRange;
+    }
+    private Pos2D lerpPos2D(Pos2D start, Pos2D end, double x){
+        return new Pos2D(
+                lerp(start.x,end.x,x),
+                lerp(start.y,end.y,x),
+                lerp(start.angle, end.angle, x)
+        );
+    }
+
+
+    // not used currently
+    ArrayList<Double> curvatures = new ArrayList<>();
     private Double[] closestCurvaturesTo(double distance){
         Double[] bracketDistances = closestDistancesTo(distance);
         Double[] result = new Double[bracketDistances.length];
@@ -119,18 +88,24 @@ public class DistanceMap {
         }
         return result;
     }
-
-
-    private double lerp(double start, double end, double x){
-        double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
-        return start + (end-start) * xInRange;
+    public ArrayList<Double> getSegmentDistancesWithLocalMaximaCurvature(){
+        ArrayList<Double> localMaximaCurvatures = new ArrayList<>(); // makes shallow list copy that can be sorted because double is an immutable type
+        ArrayList<Double> distanceAtLocalMaximas = new ArrayList<>();
+        for (int i = 1; i < curvatures.size()-2; i++){
+            if (Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i-1)) && Math.abs(curvatures.get(i)) > Math.abs(curvatures.get(i+1))){
+                localMaximaCurvatures.add(Math.abs(curvatures.get(i)));
+                distanceAtLocalMaximas.add(distances.get(i));
+            }
+        }
+        System.out.println(localMaximaCurvatures.size());
+        return distanceAtLocalMaximas;
     }
-    private Coordinate lerpCoordinate(Coordinate start, Coordinate end, double x){
-        return new Coordinate(
-                lerp(start.getX(),end.getX(),x),
-                lerp(start.getY(),end.getY(),x),
-                lerp(start.getAngle(), end.getAngle(), x)
-        );
+    public double getCurvatureAtDistance(double distance){
+        if (isDistanceCalculated(distance)) return curvatures.get(distances.indexOf(distance));
+
+        Double[] closestCurvatures = closestCurvaturesTo(distance);
+        double ratio = getPartialRatio(distance, closestCurvatures);
+        return lerp(closestCurvatures[0], closestCurvatures[1], ratio);
     }
 
     // TODO - Graph this so we know what values to expect

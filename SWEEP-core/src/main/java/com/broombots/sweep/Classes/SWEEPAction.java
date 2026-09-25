@@ -14,7 +14,7 @@ public abstract class SWEEPAction extends Action {
     /**
      * Target position in inches that triggers this action.
      */
-    Coordinate triggerPosition;
+    Pos2D triggerPosition;
 
     /**
      * Creates a new SWEEPAction, which extends an Action and adds the ability to be autonomously triggered with a route
@@ -23,7 +23,7 @@ public abstract class SWEEPAction extends Action {
      * @param holdTime the time to hold the action
      * @param triggerTolerance the allowed trigger distance from the target position
      */
-    public SWEEPAction(Robot robot, Coordinate triggerPosition, double holdTime, double triggerTolerance){
+    public SWEEPAction(Robot robot, Pos2D triggerPosition, double holdTime, double triggerTolerance){
         super(robot);
         this.triggerPosition = triggerPosition;
         setHoldTime(holdTime);
@@ -49,7 +49,7 @@ public abstract class SWEEPAction extends Action {
      * Set the trigger position for this action
      * @param position the position that triggers this action
      */
-    public void setPosition(Coordinate position){
+    public void setPosition(Pos2D position){
         if (position == null) throw new NullPointerException("Position cannot be null");
         this.triggerPosition = position;
     }
@@ -59,6 +59,6 @@ public abstract class SWEEPAction extends Action {
      * @return true if the action is ready to trigger, false otherwise
      */
     public boolean checkTrigger(LocalizationPacket packet){
-        return Coordinate.getDistanceBetweenCoordinates(packet.getCoordinate(), triggerPosition) <= triggerTolerance;
+        return Pos2D.getDistanceBetweenCoordinates(packet.getCoordinate(), triggerPosition) <= triggerTolerance;
     }
 }

@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines.Segments;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Splines.Segment;
 
 import org.ejml.simple.SimpleMatrix;
@@ -14,7 +14,7 @@ public class WaitSegment implements Segment {
 	/**
 	 * Held pose for the entire wait segment.
 	 */
-	private final Coordinate position;
+	private final Pos2D position;
 
 	/**
 	 * Creates a wait segment.
@@ -22,7 +22,7 @@ public class WaitSegment implements Segment {
 	 * @param position held pose for this segment
 	 * @param duration wait duration in seconds
 	 */
-	public WaitSegment(Coordinate position, double duration) {
+	public WaitSegment(Pos2D position, double duration) {
 		if (position == null) throw new IllegalArgumentException("position cannot be null");
 
 		this.position = position;
@@ -34,7 +34,7 @@ public class WaitSegment implements Segment {
 	 * @return the held pose for this segment
 	 */
 	@Override
-	public Coordinate getPosition(double overallTime) {
+	public Pos2D getPosition(double overallTime) {
 		return position;
 	}
 	public double getDuration(){
@@ -48,10 +48,10 @@ public class WaitSegment implements Segment {
 	public SimpleMatrix getSplineFormula(){
 		return new SimpleMatrix(new double[][]{
 				{
-					0, 0, 0, position.getX()
+					0, 0, 0, position.x
 				},
 				{
-					0 ,0, 0, position.getY()
+					0 ,0, 0, position.y
 				}
 		});
 	}

@@ -1,7 +1,7 @@
 package com.broombots.sweep.Splines.Segments;
 
 import com.broombots.sweep.Classes.CatmullRomCubic;
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 import com.broombots.sweep.Splines.Segment;
 import com.broombots.sweep.Splines.SplineWaypoint;
@@ -31,9 +31,9 @@ public class AngledSplineSegment implements Segment {
      * @return pose at the requested time
      */
     @Override
-    public Coordinate getPosition(double time) {
+    public Pos2D getPosition(double time) {
         time = putInRange(time);
-        return new Coordinate(xCubic.evaluate(time), yCubic.evaluate(time), angleCubic.evaluate(time));
+        return new Pos2D(xCubic.evaluate(time), yCubic.evaluate(time), angleCubic.evaluate(time));
     }
     @Override
     public double calculateDistance(double tStart, double tEnd) {
@@ -41,7 +41,7 @@ public class AngledSplineSegment implements Segment {
         tEnd = putInRange(tEnd);
         double distance = 0;
         for (double t = tStart; t < tEnd; t += sampleRate) {
-            distance += Coordinate.getDistanceBetweenCoordinates(getPosition(t),getPosition(t+sampleRate));
+            distance += Pos2D.getDistanceBetweenCoordinates(getPosition(t),getPosition(t+sampleRate));
         }
         return distance;
     }

@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
@@ -16,7 +16,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	/**
 	 * Target pose for this waypoint (x/y in inches, heading in degrees).
 	 */
-	private final Coordinate coordinate;
+	private final Pos2D coordinate;
 
 	/**
 	 * Creates a spline-angle waypoint from primitive pose values.
@@ -27,7 +27,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 * @param speed segment speed scale relative to robot top speed
 	 */
 	public SplineAngleWaypoint(double x, double y, double angle, double speed) {
-		this.coordinate = new Coordinate(x, y, angle);
+		this.coordinate = new Pos2D(x, y, angle);
 		this.speed = speed;
 	}
 
@@ -37,7 +37,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 * @param coordinate target pose for this waypoint
 	 * @param speed segment speed scale relative to robot top speed
 	 */
-	public SplineAngleWaypoint(Coordinate coordinate, double speed) {
+	public SplineAngleWaypoint(Pos2D coordinate, double speed) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 
 		this.coordinate = coordinate;
@@ -48,7 +48,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 * @return target pose for this waypoint
 	 */
 	@Override
-	public Coordinate getCoordinate() {
+	public Pos2D getCoordinate() {
 		return coordinate;
 	}
 
@@ -57,7 +57,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getX() {
-		return coordinate.getX();
+		return coordinate.x;
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getY() {
-		return coordinate.getY();
+		return coordinate.y;
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class SplineAngleWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getAngle() {
-		return coordinate.getAngle();
+		return coordinate.angle;
 	}
 
 	/**

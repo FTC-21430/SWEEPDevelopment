@@ -1,6 +1,6 @@
 package com.broombots.sweep.Builder;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -48,7 +48,7 @@ public class VelocityMap {
             double accelX = (nextRawSample.getVelX()-rawVelocitySample.getAccelX())/sampleRate;
             double accelY = (nextRawSample.getAccelY()-rawVelocitySample.getAccelY())/sampleRate;
             double accelAngle = (nextRawSample.getVelAngle()-rawVelocitySample.getAccelAngle())/sampleRate;
-            MovementPoint newPoint = new MovementPoint(new Coordinate(0,0), velX, velY, velAngle, accelX, accelY, accelAngle);
+            MovementPoint newPoint = new MovementPoint(new Pos2D(0,0,0), velX, velY, velAngle, accelX, accelY, accelAngle);
             accelerationMap.addMovementPoint(newPoint);
         }
 
@@ -71,7 +71,7 @@ public class VelocityMap {
         cumDist.add(initialKey);
         for (int i = 1; i < raw.length; i++) {
             cumDist.add(cumDist.get(i - 1) +
-                Coordinate.getDistanceBetweenCoordinates(
+                Pos2D.getDistanceBetweenCoordinates(
                     raw[i - 1].getPosition(),
                     raw[i].getPosition()
                 ));

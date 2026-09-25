@@ -1,6 +1,6 @@
 package com.broombots.sweep.Splines;
 
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
@@ -11,7 +11,7 @@ public class StartWaypoint implements Waypoint {
 	/**
 	 * Target pose for this waypoint (x/y in inches, heading in degrees).
 	 */
-	private final Coordinate coordinate;
+	private final Pos2D coordinate;
 
 	/**
 	 * Creates a start waypoint from primitive pose values.
@@ -21,7 +21,7 @@ public class StartWaypoint implements Waypoint {
 	 * @param angle target heading in degrees
 	 */
 	public StartWaypoint(double x, double y, double angle) {
-		this.coordinate = new Coordinate(x, y, angle);
+		this.coordinate = new Pos2D(x, y, angle);
 	}
 
 	/**
@@ -29,7 +29,7 @@ public class StartWaypoint implements Waypoint {
 	 *
 	 * @param coordinate target pose for this waypoint
 	 */
-	public StartWaypoint(Coordinate coordinate) {
+	public StartWaypoint(Pos2D coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
 		this.coordinate = coordinate;
 	}
@@ -38,7 +38,7 @@ public class StartWaypoint implements Waypoint {
 	 * @return target pose for this waypoint
 	 */
 	@Override
-	public Coordinate getCoordinate() {
+	public Pos2D getCoordinate() {
 		return coordinate;
 	}
 
@@ -47,7 +47,7 @@ public class StartWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getX() {
-		return coordinate.getX();
+		return coordinate.x;
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class StartWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getY() {
-		return coordinate.getY();
+		return coordinate.y;
 	}
 
 	/**
@@ -63,7 +63,7 @@ public class StartWaypoint implements Waypoint {
 	 */
 	@Override
 	public double getAngle() {
-		return coordinate.getAngle();
+		return coordinate.angle;
 	}
 
 	/**
