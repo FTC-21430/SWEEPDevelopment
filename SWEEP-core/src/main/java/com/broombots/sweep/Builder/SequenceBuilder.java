@@ -246,6 +246,10 @@ public class SequenceBuilder {
         if (movementParameters == null) throw new RuntimeException("Robot movement parameters must be defined");
         if (sampleRate <= 10e-9) throw new RuntimeException("SampleRate must be a positive, non negative number that is not lost in floating point rounding");
 
+//        if (startingPoint.velocity.getMagnitude() > 1e-5) {
+//            createWaypointFromStartingVelocity(startingPoint, waypoints.get(1));
+//        }
+
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
         for (int i = 1; i < waypoints.size(); i++){
@@ -258,7 +262,7 @@ public class SequenceBuilder {
                         getWaypointInRange(i - 1),
                         wp,
                         wp));
-                segments.add(new WaitSegment(wp.getCoordinate(), 0.1));
+//                segments.add(new WaitSegment(wp.getCoordinate(), 0.1));
             } else {
                 segments.add(createNewSegment(i));
             }
@@ -300,9 +304,24 @@ public class SequenceBuilder {
      * @return The Waypoint object at the specified index.
      */
     private Waypoint getWaypointInRange(int waypointIndex){
+        if (startingPoint == null) throw new IllegalArgumentException("Must have a defined starting Point");
+        if (waypointIndex == -1) {
+            return createWaypointFromStartingVelocity(startingPoint, waypoints.get(1));
+        }
         waypointIndex = Math.max(waypointIndex,0);
         waypointIndex = Math.min(waypointIndex,waypoints.size()-1);
         return waypoints.get(waypointIndex);
+    }
+    // Create a CatmullRom tangent waypoint for before the starting point to ensure that the generated path will start in the direction of the current momentum.
+    private Waypoint createWaypointFromStartingVelocity(PathPoint startingPoint, Waypoint nextPoint) {
+        double timestep = 12; //seconds TODO: Tune value relative to acceleration?
+        double traveledDistance = startingPoint.velocity.getMagnitude() * timestep;
+        double angle = Pos2D.getMovementDirectionRad(new Pos2D(0, 0, 0), startingPoint.velocity) + Math.PI; // backward through time
+        Pos2D posAfterStep = new Pos2D(nextPoint.getX() - traveledDistance * Math.cos(angle), nextPoint.getY() - traveledDistance * Math.sin(angle), Math.toDegrees(angle));
+//        Pos2D handlePos = new Pos2D((nextPoint.getX()+posAfterStep.x)/2,(nextPoint.getY()+posAfterStep.y)/2, startingPoint.position.angle);
+        Pos2D handlePos = posAfterStep;
+        System.out.println("Handle Pos: " + handlePos.x + ", " + handlePos.y);
+        return new SplineAngleWaypoint(handlePos,1);
     }
     /**
      * Clips the given coordinate to be within the bounds of the field.

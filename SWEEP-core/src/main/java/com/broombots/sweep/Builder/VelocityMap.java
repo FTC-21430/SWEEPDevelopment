@@ -4,7 +4,7 @@ import com.broombots.sweep.Classes.Pos2D;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-
+@Deprecated
 public class VelocityMap {
     private LinkedList<MovementPoint> rawVelocityProfile = new LinkedList<>();
     private LinkedList<Double> time = new LinkedList<>();

@@ -4,6 +4,7 @@ import com.broombots.sweep.Classes.Pos2D;
 
 import java.util.ArrayList;
 
+@Deprecated
 public class MovementMap {
 
     private static final double EPSILON = 1e-9;

@@ -1,8 +1,9 @@
 package com.example.plot;
 
-import com.broombots.sweep.Builder.Path;
-import com.broombots.sweep.Builder.PathBuilder;
-import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Builder.Sequence;
+import com.broombots.sweep.Builder.SequenceBuilder;
+import com.broombots.sweep.Classes.PathPoint;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.github.sh0nk.matplotlib4j.NumpyUtils;
@@ -14,23 +15,32 @@ import com.broombots.sweep.Splines.SplineWaypoint;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Array;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class Plotting {
     private static final String LOCAL_VENV_PYTHON = "/home/tobin/SWEEPDevelopment/.venv/bin/python3";
 
     public static void main(String[] args) throws PythonExecutionException, IOException {
-        Path path = new PathBuilder(new DefaultRobotMovementParameters())
-                .start(0,0,0)
-//                .splineToAngle(0,20,0, 1)
-//                .splineToAngle(20,20,0, 1)
-                .end(0, 40, 0)
+
+        PathPoint start = new PathPoint();
+        start.position = new Pos2D(-20,10,0);
+        start.velocity = new Pos2D(0,0,0);
+        start.time = 0;
+
+        Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
+                .start(start)
+                .splineToAngle(0,20,0, 1)
+                .splineToAngle(20,20,0, 1)
+//                .splineToAngle(20,60,0, 1)
+                .splineToAngle(-20,20,0, 1)
+//                .splineToAngle(0,0,0, 1)
+                .end(40, 0, 0)
                 .build();
-        SWEEPFullPlotFullRender.PlotRender(path, 0.01, LOCAL_VENV_PYTHON);
+        SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
 //        List<Coordinate> waypoints = Arrays.asList(
 //                new Coordinate(0, 0),
 //                new Coordinate(0, 40)
@@ -71,7 +81,7 @@ class SweepCatmullRomPathPlotter {
      * @param samplesPerSegment number of interpolation samples per segment
      * @param pythonBinPath python interpreter path for matplotlib4j
      */
-    public static void plotPath(List<Coordinate> waypoints, int samplesPerSegment, String pythonBinPath)
+    public static void plotPath(List<Pos2D> waypoints, int samplesPerSegment, String pythonBinPath)
             throws PythonExecutionException, IOException {
         if (waypoints == null || waypoints.size() < 2) return;
 
@@ -92,15 +102,15 @@ class SweepCatmullRomPathPlotter {
             FollowSplineSegment segment = new FollowSplineSegment(p1, p2, p3, p4);
             for (int sample = 0; sample < safeSamplesPerSegment; sample++) {
                 double t = (double) sample / safeSamplesPerSegment;
-                Coordinate point = segment.getPosition(t);
-                xPath.add(point.getX());
-                yPath.add(point.getY());
+                Pos2D point = segment.getPosition(t);
+                xPath.add(point.x);
+                yPath.add(point.y);
             }
         }
 
-        Coordinate end = waypoints.get(waypoints.size() - 1);
-        xPath.add(end.getX());
-        yPath.add(end.getY());
+        Pos2D end = waypoints.get(waypoints.size() - 1);
+        xPath.add(end.x);
+        yPath.add(end.y);
 
         Plot plt = Plot.create(PythonConfig.pythonBinPathConfig(pythonBinPath));
         plt.plot().add(xPath, yPath).label("SWEEP Catmull-Rom Path");
@@ -109,7 +119,12 @@ class SweepCatmullRomPathPlotter {
     }
 }
 class SWEEPFullPlotFullRender{
-    public static void PlotRender(Path compiledPath, double timeSampleRate, String pythonDirectory)
+    private static final String[] CORRESPONDENCE_COLORS = new String[]{
+            "#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231",
+            "#911eb4", "#46f0f0", "#f032e6"
+    };
+
+    public static void PlotRender(Sequence compiledSequence, double timeSampleRate, String pythonDirectory)
             throws PythonExecutionException, IOException {
         ArrayList<Double> timeValues = new ArrayList<>();
         ArrayList<Double> xValues = new ArrayList<>();
@@ -119,26 +134,26 @@ class SWEEPFullPlotFullRender{
         ArrayList<Double> yVelValues = new ArrayList<>();
         ArrayList<Double> angleVelValues = new ArrayList<>();
         ArrayList<Double> velMagnitude = new ArrayList<>();
-        for (double i = 0; i < compiledPath.getEndTime(); i += timeSampleRate){
-            double velX = compiledPath.getMovement(i).getVelX();
-            double velY = compiledPath.getMovement(i).getVelY();
-            xValues.add(compiledPath.getMovement(i).getPosition().getX());
-            yValues.add(compiledPath.getMovement(i).getPosition().getY());
-            angleValues.add(compiledPath.getMovement(i).getPosition().getAngle());
+        System.out.println("CompiledSequence last time is: " + compiledSequence.getLastTime());
+        for (double i = 0; i < compiledSequence.getLastTime(); i += timeSampleRate){
+            double velX = compiledSequence.getMovement(i).velocity.x;
+            double velY = compiledSequence.getMovement(i).velocity.y;
+            xValues.add(compiledSequence.getMovement(i).position.x);
+            yValues.add(compiledSequence.getMovement(i).position.y);
+            angleValues.add(compiledSequence.getMovement(i).position.angle);
             xVelValues.add(velX);
             yVelValues.add(velY);
-            angleVelValues.add(compiledPath.getMovement(i).getVelAngle());
-            velMagnitude.add(Math.hypot(velX, velY));
+            angleVelValues.add(compiledSequence.getMovement(i).velocity.angle);
+            velMagnitude.add(compiledSequence.getMovement(i).velocity.getMagnitude());
             timeValues.add(i);
-            System.out.println("At Time: " + i + ", velY = " + velY);
         }
-        System.out.println();
 
         // All plots in one figure so all windows open at once
         Plot plt = Plot.create(PythonConfig.pythonBinPathConfig(pythonDirectory));
 
         plt.subplot(3, 3, 1);
         plt.plot().add(xValues, yValues).label("XY Path");
+        addCorrespondenceMarkers(plt, xValues, yValues);
         plt.title("XY Path");
         plt.xlabel("X (in)");
         plt.ylabel("Y (in)");
@@ -153,6 +168,7 @@ class SWEEPFullPlotFullRender{
 
         plt.subplot(3, 3, 3);
         plt.plot().add(timeValues, velMagnitude).label("Speed");
+        addCorrespondenceMarkers(plt, timeValues, velMagnitude);
         plt.title("Speed vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Speed (in/s)");
@@ -174,6 +190,7 @@ class SWEEPFullPlotFullRender{
 
         plt.subplot(3, 3, 7);
         plt.plot().add(timeValues, xVelValues).label("X Velocity");
+        addCorrespondenceMarkers(plt, timeValues, xVelValues);
         plt.title("Robot Relative X Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel X (in/s)");
@@ -181,6 +198,7 @@ class SWEEPFullPlotFullRender{
 
         plt.subplot(3, 3, 8);
         plt.plot().add(timeValues, yVelValues).label("Y Velocity");
+        addCorrespondenceMarkers(plt, timeValues, yVelValues);
         plt.title("Robot Relative Y Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel Y (in/s)");
@@ -194,5 +212,23 @@ class SWEEPFullPlotFullRender{
         plt.legend();
 
         plt.show();
+    }
+
+    private static void addCorrespondenceMarkers(Plot plt, List<Double> xValues, List<Double> yValues) {
+        if (xValues == null || yValues == null) return;
+        if (xValues.size() != yValues.size() || xValues.isEmpty()) return;
+
+        int markerCount = Math.min(CORRESPONDENCE_COLORS.length, xValues.size());
+        if (markerCount == 0) return;
+
+        int lastIndex = xValues.size() - 1;
+        for (int i = 0; i < markerCount; i++) {
+            int index = markerCount == 1
+                    ? 0
+                    : (int) Math.round((double) i * lastIndex / (markerCount - 1));
+            plt.plot()
+                    .add(Collections.singletonList(xValues.get(index)), Collections.singletonList(yValues.get(index)), "o")
+                    .color(CORRESPONDENCE_COLORS[i]);
+        }
     }
 }

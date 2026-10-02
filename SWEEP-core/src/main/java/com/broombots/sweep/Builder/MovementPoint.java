@@ -1,7 +1,7 @@
 package com.broombots.sweep.Builder;
 
 import com.broombots.sweep.Classes.Pos2D;
-
+@Deprecated
 public class MovementPoint {
     private final Pos2D position;
     private final double velX, velY, velAngle;

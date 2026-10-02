@@ -1,12 +1,12 @@
-package org.firstinspires.ftc.teamcode.Resources;
+package com.broombots.sweep.Classes;
 
 import java.util.ArrayList;
 
-public class lerpFunction {
+public class LerpFunction {
     private final ArrayList<Double> keyedPoints;
     private final ArrayList<Double> resultValues;
 
-    public lerpFunction(ArrayList keyedPoints, ArrayList resultValues){
+    public LerpFunction(ArrayList keyedPoints, ArrayList resultValues){
         if (keyedPoints.size() != resultValues.size()) throw new IllegalArgumentException("both keyed points and keyed values lists must be the same size");
         this.keyedPoints = keyedPoints;
         this.resultValues = resultValues;
@@ -14,13 +14,17 @@ public class lerpFunction {
 
 
     public double getValue(double key){
-        if (keyedPoints.contains(key)) return resultValues.get(resultValues.indexOf(key));
+        if (keyedPoints.isEmpty()) throw new IllegalStateException("LerpFunction has no points");
+        if (keyedPoints.size() == 1) return resultValues.get(0);
 
-        // Binary search
-        int low = 0; // first known key index
-        int high = keyedPoints.size(); // last known key index
-        while (high-low > 1){
-            int mid = (int)(high-low)/2;
+        if (key <= keyedPoints.get(0)) return resultValues.get(0);
+        int lastIndex = keyedPoints.size() - 1;
+        if (key >= keyedPoints.get(lastIndex)) return resultValues.get(lastIndex);
+
+        int low = 0;
+        int high = lastIndex;
+        while (high - low > 1){
+            int mid = low + (high - low) / 2;
             if (key > keyedPoints.get(mid)){
                 low = mid;
             }else{

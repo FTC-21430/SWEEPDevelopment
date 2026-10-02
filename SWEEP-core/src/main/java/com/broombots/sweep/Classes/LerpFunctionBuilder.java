@@ -1,18 +1,18 @@
-package org.firstinspires.ftc.teamcode.Resources;
+package com.broombots.sweep.Classes;
 
 import java.util.ArrayList;
 
-public class lerpFunctionBuilder {
+public class LerpFunctionBuilder {
     ArrayList<Double> keyedPoints = new ArrayList<>();
     ArrayList<Double> resultPoints = new ArrayList<>();
     // Add it in order please.
-    public lerpFunctionBuilder addPoint(double key, double result){
+    public LerpFunctionBuilder addPoint(double key, double result){
         keyedPoints.add(key);
         resultPoints.add(result);
         return this;
     }
-    public lerpFunction build(){
-        return new lerpFunction(keyedPoints, resultPoints);
+    public LerpFunction build(){
+        return new LerpFunction(keyedPoints, resultPoints);
     }
 
 }

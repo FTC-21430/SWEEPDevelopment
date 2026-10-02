@@ -1,5 +1,7 @@
 package com.broombots.sweep.Builder;
 
+import com.broombots.sweep.Classes.LerpFunction;
+import com.broombots.sweep.Classes.LerpFunctionBuilder;
 import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.RobotMovementParameters;
@@ -11,20 +13,32 @@ import java.util.ArrayList;
 public class PathProcessor {
     private RobotMovementParameters movementParameters;
 
-    private double acceleration = 12; // inches per sec^2
+    private double acceleration = 22; // inches per sec^2
     private double angularAcceleration = 60; // degrees per sec^2
-    private double maxVelocity = 80;
+    private double maxVelocity = 48;
+    LerpFunction regression;
+    ArrayList<Double> speedRatios = new ArrayList<>();
+
     public PathProcessor(RobotMovementParameters movementParameters) {
         // Initialize the motion profile processor with the given movement parameters
         this.movementParameters = movementParameters;
+
+        final double pi = Math.PI; // shorthand for myself because I need to type this a lot, Style guide exception please.
+
+        // Create regression from change in RAD per inch to speed change //TODO TUNE
+        regression = new LerpFunctionBuilder()
+                .addPoint(0,1)
+                .addPoint(0.03, 0.98)
+                .addPoint(0.04,0.8)
+                .addPoint(0.35, 0.05)
+                .build();
     }
     public ArrayList<PathPoint> processPath(Segment[] segments, double sampleRate, PathPoint startingPoint) {
         ArrayList<PathPoint> path = new ArrayList<>();
-        PathPoint stPoint = new PathPoint();
-        stPoint.position = segments[0].getPosition(0);
-        stPoint.velocity = new Pos2D(0,0,0);
-        stPoint.time = 0;
+
+        PathPoint stPoint = startingPoint;
         path.add(stPoint);
+        speedRatios.add(segments[0].getSpeedRate());
         for (int i = 0; i < segments.length; i++){
             Segment segment = segments[i];
             for (double t = 0.0 + 1e-7; t < 1.0; t += sampleRate){
@@ -32,6 +46,7 @@ public class PathProcessor {
                 PathPoint point = new PathPoint();
                 point.position = pos2D;
                 path.add(point);
+                speedRatios.add(segment.getSpeedRate());
             }
         }
         PathPoint endPoint = new PathPoint();
@@ -43,60 +58,72 @@ public class PathProcessor {
 
         double time = startingPoint.time;
 
-        for (int i = 1; i < path.size()-1; i++){
+        for (int i = 1; i < path.size(); i++){
             PathPoint lastPoint = path.get(i-1);
             PathPoint currentPoint = path.get(i);
 
             double distance = Pos2D.getDistanceBetweenCoordinates(lastPoint.position, currentPoint.position);
             double avgVelocity = (lastPoint.velocity.getMagnitude()+currentPoint.velocity.getMagnitude())/2.0;
+            double dt;
+            if (avgVelocity > 1e-5) {
+                dt = distance / avgVelocity;
+            }else{
+                dt = 1e-5;
+            }
 
-            double dt = distance/avgVelocity;
             time += dt;
 
-            currentPoint.time = time;
+            path.get(i).time = time;
         }
-
         return path;
     }
 
     private ArrayList<PathPoint> generatePathPoints(ArrayList<PathPoint> path) {
         // forward pass for acceleration and primary velocity limits.
         for (int i = 1; i < path.size()-2; i++){
+
             PathPoint lastPoint = path.get(i-1);
             PathPoint currentPoint = path.get(i);
+            PathPoint nextPoint = null;
+            if (i < path.size()-2){
+                nextPoint = path.get(i+1);
+            }
+            double d1 = Pos2D.getDistanceBetweenCoordinates(lastPoint.position, currentPoint.position);
 
-            double distance = Pos2D.getDistanceBetweenCoordinates(lastPoint.position, currentPoint.position);
+            double adjustedSpeed = calculateSpeedGoal(lastPoint,currentPoint,nextPoint, i);
+            // calculate new moment of velocity
+
             double lastVelocityScalar = Math.hypot(lastPoint.velocity.x, lastPoint.velocity.y);
-
-            double newVelocityScalar = calculateNewVelocity(distance, acceleration, lastVelocityScalar);
-            if (newVelocityScalar > maxVelocity) newVelocityScalar = maxVelocity;
-            double angleRad = Math.atan2(currentPoint.position.y - lastPoint.position.y, currentPoint.position.x - lastPoint.position.x);
-
+            double momentAcceleration = acceleration;
+            double newVelocityScalar = calculateNewVelocity(d1, momentAcceleration, lastVelocityScalar);
+            if (newVelocityScalar > adjustedSpeed) newVelocityScalar = adjustedSpeed;
+            double angleRad = Pos2D.getMovementDirectionRad(currentPoint.position, lastPoint.position);
             double xVelocity = newVelocityScalar * Math.cos(angleRad);
             double yVelocity = newVelocityScalar * Math.sin(angleRad);
-
 //            double angularDifference = currentPoint.position.angle - lastPoint.position.angle;
 //            double angularVelocity = calculateNewVelocity(angularDifference, angularAcceleration, lastPoint.velocity.angle);
             // TODO: handle angular velocity after x,y
 
             Pos2D velocity = new Pos2D(xVelocity,yVelocity,0);
-            currentPoint.velocity = velocity;
+            path.get(i).velocity = velocity;
+
+
         }
+        System.out.println("Finished Front Pass");
         // back pass for de-accel period
         for (int i = path.size()-2; i > 1; i--){
             PathPoint lastPoint = path.get(i+1);
             PathPoint currentPoint = path.get(i);
 
+            if (currentPoint.velocity == null) currentPoint.velocity = new Pos2D(0,0,0);
             double distance = Pos2D.getDistanceBetweenCoordinates(lastPoint.position, currentPoint.position);
             double lastVelocityScalar = Math.hypot(lastPoint.velocity.x, lastPoint.velocity.y);
 
             double forwardPassVelocityScalar = Math.hypot(currentPoint.velocity.x, currentPoint.velocity.y);
             double newVelocityScalar = calculateNewVelocity(distance, acceleration, lastVelocityScalar);
-            if (forwardPassVelocityScalar < newVelocityScalar) break; // respect the forward pass output
-
-            double angleRad = Math.atan2(currentPoint.position.y - lastPoint.position.y, currentPoint.position.x - lastPoint.position.x);
-
-            double xVelocity = newVelocityScalar * Math.cos(angleRad);
+            if (forwardPassVelocityScalar < newVelocityScalar) continue; // respect the forward pass output
+            // point order is opposite from forward pass because we are going backwards.
+            double angleRad = Pos2D.getMovementDirectionRad(lastPoint.position, currentPoint.position);double xVelocity = newVelocityScalar * Math.cos(angleRad);
             double yVelocity = newVelocityScalar * Math.sin(angleRad);
 
 //            double angularDifference = currentPoint.position.angle - lastPoint.position.angle;
@@ -106,13 +133,43 @@ public class PathProcessor {
             Pos2D velocity = new Pos2D(xVelocity,yVelocity,0);
             currentPoint.velocity = velocity;
         }
+        System.out.println("Finished Back Pass");
         return path;
     }
-
 
     private double calculateNewVelocity(double dTraveled, double acceleration, double lastVelocity){
         return Math.sqrt(Math.pow(lastVelocity, 2) + 2 * (acceleration * dTraveled));
     }
 
+    private double calculateSpeedGoal(PathPoint lastPoint, PathPoint currentPoint, PathPoint nextPoint, int idx){
+        // find curvature in rad per inch
+        double d1 = Pos2D.getDistanceBetweenCoordinates(lastPoint.position, currentPoint.position);
+        double d2;
+        double angle1 = Pos2D.getMovementDirectionRad(lastPoint.position,currentPoint.position);
+        double angle2;
+        if (nextPoint != null){
+            d2 = Pos2D.getDistanceBetweenCoordinates(currentPoint.position, nextPoint.position);
+            angle2 = Pos2D.getMovementDirectionRad(currentPoint.position,nextPoint.position);
+        }else {
+            d2 = d1;
+            angle2 = angle1;
+        }
+        double averageTravelDistance = Math.abs((d1+d2)/2.0);
+        double changeInAngleRAD = Math.abs(wrapRadians(angle2 - angle1));
+        double deltaRadPerInch;
+        if (changeInAngleRAD < 1e-8 || averageTravelDistance < 1e-3){
+            deltaRadPerInch = 0;
+        }
+        else{
+            deltaRadPerInch = changeInAngleRAD/averageTravelDistance;
+        }
+        System.out.println("RadPerInch: " + deltaRadPerInch + "  -  regression" + regression.getValue(deltaRadPerInch));
+        return maxVelocity * regression.getValue(deltaRadPerInch) * speedRatios.get(idx);
+    }
+    private double wrapRadians(double angle) {
+        while (angle > Math.PI) angle -= 2.0 * Math.PI;
+        while (angle < -Math.PI) angle += 2.0 * Math.PI;
+        return angle;
+    }
 
 }

@@ -2,6 +2,7 @@ package com.broombots.sweep.Builder;
 
 import java.util.ArrayList;
 
+@Deprecated
 public class TimeProfile {
     ArrayList<MovementPoint> movementPoints = new ArrayList<>();
     ArrayList<Double> timeKey = new ArrayList<>();
