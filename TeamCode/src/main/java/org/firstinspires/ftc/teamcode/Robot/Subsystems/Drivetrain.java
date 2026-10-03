@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.SWEEP.Classes.Subsystem;
+import com.broombots.sweep.Classes.Subsystem;
 
 /**
  * Drivetrain subsystem for a mecanum drive robot.

@@ -3,6 +3,13 @@ repositories {
     google() // Needed for androidx
 }
 
+// RobotCore bundles slf4j classes internally, so exclude the standalone slf4j JARs
+// from all dependency graphs to prevent duplicate class errors at build time.
+configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+}
+
 dependencies {
     implementation 'org.firstinspires.ftc:Inspection:11.1.0'
     implementation 'org.firstinspires.ftc:Blocks:11.1.0'
@@ -13,5 +20,6 @@ dependencies {
     implementation 'org.firstinspires.ftc:FtcCommon:11.1.0'
     implementation 'org.firstinspires.ftc:Vision:11.1.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.github.sh0nk:matplotlib4j:0.5.0'
 }
 
