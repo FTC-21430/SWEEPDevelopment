@@ -1,5 +1,6 @@
 package com.broombots.sweep.Splines.Segments;
 
+import com.broombots.sweep.Classes.BSplineCubic;
 import com.broombots.sweep.Classes.CatmullRomCubic;
 import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;

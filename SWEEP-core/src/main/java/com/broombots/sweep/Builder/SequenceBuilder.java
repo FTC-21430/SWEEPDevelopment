@@ -55,6 +55,7 @@ public class SequenceBuilder {
     private double sampleRate = 0.0005;
     private RobotMovementParameters movementParameters;
     private PathPoint startingPoint;
+    private double endingSpeedRatio = 0.0;
     /**
      * Constructs a new PathBuilder object.
      * Initializes the waypoints and actions arrays, and sets the previous coordinate to (0,0,0).
@@ -203,8 +204,23 @@ public class SequenceBuilder {
      * @return The current PathBuilder instance, allowing for method chaining.
      */
     public SequenceBuilder end(double x, double y, double angle){
+        end(x,y,angle,0.0);
+        return this;
+    }
+    /**
+     * Adds an end waypoint to the path.
+     * End waypoint must be the last waypoint in the path.
+     * The robot will stop at this waypoint and end following the path from this point.
+     * @param x The x coordinate of the end waypoint.
+     * @param y The y coordinate of the end waypoint.
+     * @param angle The angle at which the robot should be oriented at the end waypoint.
+     * @param endingSpeedRatio a value between 0.0 to 1.0
+     * @return The current PathBuilder instance, allowing for method chaining.
+     */
+    public SequenceBuilder end(double x, double y, double angle, double endingSpeedRatio){
         waypoints.add(new EndWaypoint(x,y,angle));
         previousCoordinate = new Pos2D(x,y,angle);
+        this.endingSpeedRatio = endingSpeedRatio;
         return this;
     }
     /**
@@ -269,7 +285,7 @@ public class SequenceBuilder {
         }
 
         PathProcessor profileProcessor = new PathProcessor(movementParameters);
-        return new Sequence(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint),actions.toArray(new SWEEPAction[0]));
+        return new Sequence(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint, endingSpeedRatio),actions.toArray(new SWEEPAction[0]));
     }
     /**
      * Creates a new segment based on the waypoint type at the specified index.
@@ -317,7 +333,7 @@ public class SequenceBuilder {
         double timestep = 12; //seconds TODO: Tune value relative to acceleration?
         double traveledDistance = startingPoint.velocity.getMagnitude() * timestep;
         double angle = Pos2D.getMovementDirectionRad(new Pos2D(0, 0, 0), startingPoint.velocity) + Math.PI; // backward through time
-        Pos2D posAfterStep = new Pos2D(nextPoint.getX() - traveledDistance * Math.cos(angle), nextPoint.getY() - traveledDistance * Math.sin(angle), Math.toDegrees(angle));
+        Pos2D posAfterStep = new Pos2D(nextPoint.getX() - traveledDistance * Math.cos(angle), nextPoint.getY() - traveledDistance * Math.sin(angle), Math.toDegrees(angle-Math.PI));
 //        Pos2D handlePos = new Pos2D((nextPoint.getX()+posAfterStep.x)/2,(nextPoint.getY()+posAfterStep.y)/2, startingPoint.position.angle);
         Pos2D handlePos = posAfterStep;
         System.out.println("Handle Pos: " + handlePos.x + ", " + handlePos.y);

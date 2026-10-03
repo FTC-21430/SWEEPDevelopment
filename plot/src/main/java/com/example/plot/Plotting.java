@@ -33,19 +33,11 @@ public class Plotting {
 
         Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
                 .start(start)
-                .splineToAngle(0,20,0, 1)
-                .splineToAngle(20,20,0, 1)
-//                .splineToAngle(20,60,0, 1)
-                .splineToAngle(-20,20,0, 1)
-//                .splineToAngle(0,0,0, 1)
-                .end(40, 0, 0)
+                .splineToAngle(0,20,90, 1)
+                .splineToAngle(20,20,90, 1)
+                .end(40, 0, 0,0.3)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
-//        List<Coordinate> waypoints = Arrays.asList(
-//                new Coordinate(0, 0),
-//                new Coordinate(0, 40)
-//        );
-//        SweepCatmullRomPathPlotter.plotPath(waypoints, 40, LOCAL_VENV_PYTHON);
     }
 
     public static void makePlot() throws PythonExecutionException, IOException {
@@ -191,7 +183,7 @@ class SWEEPFullPlotFullRender{
         plt.subplot(3, 3, 7);
         plt.plot().add(timeValues, xVelValues).label("X Velocity");
         addCorrespondenceMarkers(plt, timeValues, xVelValues);
-        plt.title("Robot Relative X Velocity vs Time");
+        plt.title("X Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel X (in/s)");
         plt.legend();
@@ -199,7 +191,7 @@ class SWEEPFullPlotFullRender{
         plt.subplot(3, 3, 8);
         plt.plot().add(timeValues, yVelValues).label("Y Velocity");
         addCorrespondenceMarkers(plt, timeValues, yVelValues);
-        plt.title("Robot Relative Y Velocity vs Time");
+        plt.title("Y Velocity vs Time");
         plt.xlabel("Time (s)");
         plt.ylabel("Vel Y (in/s)");
         plt.legend();
