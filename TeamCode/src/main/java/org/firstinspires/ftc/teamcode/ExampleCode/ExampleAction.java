@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.ExampleCode;
 
-import org.firstinspires.ftc.teamcode.Robot.SoftwareTestingBot;
+import org.firstinspires.ftc.teamcode.Robot.TemplateBot;
 import com.broombots.sweep.Classes.Coordinate;
 import com.broombots.sweep.Classes.SWEEPAction;
 /**
@@ -14,7 +14,7 @@ public class ExampleAction extends SWEEPAction {
      * @param time action runtime in seconds
      * @param range trigger radius in inches
      */
-    public ExampleAction (SoftwareTestingBot robot, Coordinate coordinate, double time, double range){
+    public ExampleAction (TemplateBot robot, Coordinate coordinate, double time, double range){
         super(robot, coordinate, time, range);
     }
     @Override

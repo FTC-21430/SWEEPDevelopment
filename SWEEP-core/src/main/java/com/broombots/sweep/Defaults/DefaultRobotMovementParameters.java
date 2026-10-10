@@ -2,6 +2,8 @@ package com.broombots.sweep.Defaults;
 
 import com.broombots.sweep.Classes.RobotMovementParameters;
 
+import org.ejml.simple.SimpleMatrix;
+
 public class DefaultRobotMovementParameters implements RobotMovementParameters {
     double robotMass;
     private final double averageMotorForce = 8.5; // N Per Wheel on ground;
@@ -35,5 +37,23 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
     @Override
     public double getAngleFullPowerToErrorThreshold() {
         return 40;
+    }
+
+    public SimpleMatrix getPIDCoefficients(){
+        SimpleMatrix coeffs = new SimpleMatrix(3,3);
+        coeffs.set(0,0, 1);
+        coeffs.set(0,1,0);
+        coeffs.set(0,2,0);
+
+        coeffs.set(1,0, 0.2);
+        coeffs.set(1,1,0);
+        coeffs.set(1,2,0);
+
+        coeffs.set(2,0,1);
+        coeffs.set(2,1,0);
+        coeffs.set(2,2,0);
+
+        return coeffs;
+
     }
 }

@@ -63,6 +63,7 @@ public class SWEEPPIDController {
     // to ensure lastTime is correct for the first iteration of update.
     lastTime = runtime.getSeconds();
   }
+
   public SWEEPPIDController(double pConstant, double iConstant, double dConstant, Timer runtime, boolean shouldWrap) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;

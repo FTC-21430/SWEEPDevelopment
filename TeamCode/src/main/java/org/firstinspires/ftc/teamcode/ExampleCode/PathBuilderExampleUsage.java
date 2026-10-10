@@ -3,7 +3,7 @@ import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
-import org.firstinspires.ftc.teamcode.Robot.SoftwareTestingBot;
+import org.firstinspires.ftc.teamcode.Robot.TemplateBot;
 import com.broombots.sweep.Builder.SequenceBuilder;
 
 @Disabled // remove if you are going to copy and use this code.
@@ -15,10 +15,10 @@ import com.broombots.sweep.Builder.SequenceBuilder;
  */
 public class PathBuilderExampleUsage extends SWEEPRoute {
     // The specific robot you will use for the route. Change this to your robot class.
-    SoftwareTestingBot r; // Software testing bot is the example here, r is just shorthand for robot.
+    TemplateBot r; // Software testing bot is the example here, r is just shorthand for robot.
     @Override
     public void defineRoute() {
-        r = new SoftwareTestingBot(hardwareMap, telemetry); // create the new robot object, passing FIRSTSDK bits to the constructor.
+        r = new TemplateBot(hardwareMap, telemetry); // create the new robot object, passing FIRSTSDK bits to the constructor.
         super.robot = r; // Assigning the your robot the the superclasses robot, which it will then use to run the route on.
         super.sequence = new SequenceBuilder(new DefaultRobotMovementParameters()) // create the path that will be executed.
                 .start(0, 0, 0) // All paths must have a start point as the first

@@ -1,0 +1,5 @@
+- name: Publish
+  env:
+    GITHUB_ACTOR: ${{ github.actor }}
+    GITHUB_TOKEN: ${{ secrets.JAVA_TOKEN }}
+  run: ./gradlew :SWEEP-core:publishReleasePublicationToGitHubPackagesRepository

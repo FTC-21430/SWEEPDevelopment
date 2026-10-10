@@ -12,7 +12,7 @@ import com.broombots.sweep.Classes.Coordinate;
  * This class represents a software testing robot that extends the SWEEPRobot class.
  * It contains subsystems and actions specific to the software testing robot.
  */
-public class SoftwareTestingBot extends SWEEPRobot {
+public class TemplateBot extends SWEEPRobot {
     // Robot subsystems
     Drivetrain drivetrain;
     /**
@@ -21,7 +21,7 @@ public class SoftwareTestingBot extends SWEEPRobot {
      * @param hardwareMap The hardware map used to access the robot's hardware components.
      * @param telemetry   The telemetry object used for sending data to the driver station.
      */
-    public SoftwareTestingBot(HardwareMap hardwareMap, Telemetry telemetry){
+    public TemplateBot(HardwareMap hardwareMap, Telemetry telemetry){
         runtime = new ElapsedTime();
         this.drivetrain = new Drivetrain(hardwareMap, telemetry, false);
         subsystems = new Subsystem[]{
