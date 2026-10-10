@@ -14,6 +14,13 @@ public class Pos2D {
     public double getMagnitude(){
         return Math.hypot(x,y);
     }
+    public Pos2D rotateAroundZeroBy(double degrees){
+        double translationAngle = Math.toRadians(degrees);
+        double x = this.x * Math.cos(translationAngle) - this.y * Math.sin(translationAngle);
+        double y = this.x * Math.sin(translationAngle) + this.y * Math.cos(translationAngle);
+        return new Pos2D(x, y, this.angle);
+
+    }
     public static Pos2D lerpPos2D(double ratio, Pos2D p1, Pos2D p2){
         return new Pos2D(
                 lerp(p1.x,p2.x,ratio),
@@ -28,4 +35,5 @@ public class Pos2D {
         double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
         return start + (end-start) * xInRange;
     }
+
 }
