@@ -1,6 +1,7 @@
 package com.broombots.sweep.Classes;
 
 import com.broombots.sweep.Builder.Sequence;
+import com.broombots.sweep.Movement.SequenceInterpreter;
 
 /**
  * SWEEPRobot class is an abstract class that extends the Robot class and provides additional functionality
@@ -8,8 +9,9 @@ import com.broombots.sweep.Builder.Sequence;
  * as well as default action ranges and times for triggering actions during autonomous operation.
  */
 public abstract class SWEEPRobot extends Robot {
-    // Current path being followed by the robot
-    private Sequence currentSequence;
+    public Localization localization;
+    public RobotMovementParameters robotMovementParameters;
+    public SequenceInterpreter sequenceInterpreter = new SequenceInterpreter(robotMovementParameters);
     // Default range and time for actions to be triggered during autonomous operation
     private double defaultActionRange = 6; // Default range for actions to be triggered
     private double defaultActionTime = 0; // Default time for actions to be triggered
@@ -19,8 +21,17 @@ public abstract class SWEEPRobot extends Robot {
      */
     @Override
     public void autonomousUpdate(){
+        updateActions();
+        localization.update();
+        if (sequenceInterpreter.hasActiveSequence()){
+            sequenceInterpreter.update(localization.getLocalizationPacket());
+        }
+        // specific drivetrain update.... use in override
+
         //Localization update
         //Other sweep logic
+
+        telemetry.update();
     }
 
     /**
@@ -28,15 +39,10 @@ public abstract class SWEEPRobot extends Robot {
      * @param sequence the path for the robot to follow
      */
     public void setPath(Sequence sequence){
-        currentSequence = sequence;
-//        path.start();
+        sequenceInterpreter.startPath(sequence);
     }
-    /**
-     * Follows the current path set for the robot. This method should be called repeatedly during the autonomous phase.
-     * It handles the logic for moving the robot along the path and executing any actions associated with the path.
-     */
-    public void followPath(){
-
+    public void addToCurrentSequence(Sequence sequence){
+        sequenceInterpreter.addToCurrentSequence(sequence);
     }
     /**
      * Gets the default range for actions to be triggered during autonomous operation.

@@ -9,6 +9,17 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
     private final double averageMotorForce = 8.5; // N Per Wheel on ground;
     private final double robotTopSpeedStraight = 48; // inches/s
     private final double timeForFullTurn = 1.2; // Seconds
+
+    public static double standardPositionP = 1;
+    public static double standardPositionI = 0.002;
+    public static double standardPositionD = 0.2;
+    public static double rotationP = 1;
+    public static double rotationI = 0.01;
+    public static double rotationD = 0.05;
+    public static double velocityP = 0.2;
+    public static double velocityI = 0;
+    public static double velocityD = 0;
+
     public DefaultRobotMovementParameters(double robotMass){
         this.robotMass = robotMass;
     }
@@ -39,21 +50,26 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
         return 40;
     }
 
+    @Override
+    /** coefficient matrix in form
+     * xy : p i d
+     * angle : p i d
+     * vX X : p i d
+     */
     public SimpleMatrix getPIDCoefficients(){
         SimpleMatrix coeffs = new SimpleMatrix(3,3);
-        coeffs.set(0,0, 1);
-        coeffs.set(0,1,0);
-        coeffs.set(0,2,0);
+        coeffs.set(0,0, standardPositionP);
+        coeffs.set(0,1,standardPositionI);
+        coeffs.set(0,2,standardPositionD);
 
-        coeffs.set(1,0, 0.2);
-        coeffs.set(1,1,0);
-        coeffs.set(1,2,0);
+        coeffs.set(1,0, rotationP);
+        coeffs.set(1,1,rotationI);
+        coeffs.set(1,2,rotationD);
 
-        coeffs.set(2,0,1);
-        coeffs.set(2,1,0);
-        coeffs.set(2,2,0);
+        coeffs.set(2,0,velocityP);
+        coeffs.set(2,1,velocityI);
+        coeffs.set(2,2,velocityD);
 
         return coeffs;
-
     }
 }

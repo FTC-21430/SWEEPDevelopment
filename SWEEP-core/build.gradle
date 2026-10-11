@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 group = 'com.broombots.sweep'
-version = '0.8.0'
+version = '0.8.2'
 
 android {
     namespace = 'com.broombots.sweep'
@@ -38,7 +38,7 @@ afterEvaluate {
         publications {
             gpr(MavenPublication) {
                 from components.release
-                artifactId = 'SWEEP-core'
+                artifactId = 'sweep-core'
             }
         }
         repositories {

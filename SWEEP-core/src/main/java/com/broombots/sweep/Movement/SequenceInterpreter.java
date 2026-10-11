@@ -21,7 +21,9 @@ public class SequenceInterpreter {
         currentSequence = sequence;
     }
     public Pos2D update(LocalizationPacket localizationPacket){
+        if (timer.getSeconds() > currentSequence.getLastTime()) currentSequence = null;
         if (currentSequence == null) return new Pos2D(0,0,0);
+
         currentSequence.updateActions(localizationPacket);
         return controller.getRobotDrivePowers(localizationPacket, currentSequence.getMovement(timer.getSeconds()));
     }
@@ -37,5 +39,11 @@ public class SequenceInterpreter {
     }
     public PathPoint getPathPoint(){
         return currentSequence.getMovement(timer.getSeconds());
+    }
+    public boolean hasActiveSequence(){
+        return currentSequence != null;
+    }
+    public void addToCurrentSequence(Sequence sequence){
+        //TODO merge sequences together in real time
     }
 }

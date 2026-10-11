@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ExampleCode;
 
 import org.firstinspires.ftc.teamcode.Robot.TemplateBot;
 import com.broombots.sweep.Classes.Coordinate;
+import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.SWEEPAction;
 /**
  * Example action that can be triggered around a coordinate and run for a set amount of time.
@@ -14,7 +15,7 @@ public class ExampleAction extends SWEEPAction {
      * @param time action runtime in seconds
      * @param range trigger radius in inches
      */
-    public ExampleAction (TemplateBot robot, Coordinate coordinate, double time, double range){
+    public ExampleAction (TemplateBot robot, Pos2D coordinate, double time, double range){
         super(robot, coordinate, time, range);
     }
     @Override
