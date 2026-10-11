@@ -6,6 +6,7 @@ import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Splines.Segment;
+import com.broombots.sweep.Splines.Segments.WaitSegment;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -35,6 +36,54 @@ public class PathProcessor {
                 .build();
     }
     public ArrayList<PathPoint> processPath(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio) {
+        ArrayList<PathPoint> path = new ArrayList<>();
+        ArrayList<ArrayList<Segment>> brokenSegments = breakUpComplexRoute(segments);
+        for (int i = 0; i < brokenSegments.size(); i++){
+            ArrayList<Segment> segmentList = brokenSegments.get(i);
+            if (segmentList.get(0) instanceof WaitSegment){
+                path.addAll(processWaitSegments(segmentList.toArray(new Segment[0]), sampleRate, path.isEmpty() ? startingPoint.time : path.get(path.size()-1).time));
+            }else{
+                double speedRate = i < brokenSegments.size()-1? 0 : endingSpeedRatio;
+                PathPoint prevPoint = i > 0? path.get(path.size()-1) : startingPoint;
+                path.addAll(processMovementSegments(segmentList.toArray(new Segment[0]), sampleRate, prevPoint, speedRate, prevPoint.time));
+            }
+        }
+        return path;
+    }
+    private ArrayList<ArrayList<Segment>> breakUpComplexRoute(Segment[] segments){
+        ArrayList<ArrayList<Segment>> result = new ArrayList<>();
+        ArrayList<Segment> currentSegmentList = new ArrayList<>();
+        for (Segment segment : segments){
+            if (segment instanceof WaitSegment){
+                result.add(currentSegmentList);
+                ArrayList<Segment> waitSegmentList = new ArrayList<>();
+                waitSegmentList.add(segment);
+                result.add(waitSegmentList);
+                currentSegmentList.clear();
+            }else{
+                currentSegmentList.add(segment);
+            }
+        }
+        return result;
+    }
+    private ArrayList<PathPoint> processWaitSegments(Segment[] segments, double sampleRate, double startTime){
+        ArrayList<PathPoint> path = new ArrayList<>();
+        double lastTime = startTime;
+        for (Segment segment : segments){
+            WaitSegment waitSegment = (WaitSegment) segment;
+            for (double t = lastTime; t < waitSegment.getDuration()+lastTime; t += sampleRate){
+                Pos2D pos2D = waitSegment.getPosition(t);
+                PathPoint point = new PathPoint();
+                point.position = pos2D;
+                point.velocity = new Pos2D(0,0,0);
+                point.time = t;
+                path.add(point);
+            }
+            lastTime = path.get(path.size()-1).time;
+        }
+        return path;
+    }
+    private ArrayList<PathPoint> processMovementSegments(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio, double startTime){
         ArrayList<PathPoint> path = new ArrayList<>();
 
         PathPoint stPoint = startingPoint;

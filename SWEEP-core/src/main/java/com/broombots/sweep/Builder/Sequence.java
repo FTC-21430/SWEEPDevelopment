@@ -75,8 +75,9 @@ public class Sequence {
     }
 
     private int[] getClosestIdxToTime(double time){
+        if (compiledPath.isEmpty()) return new int[]{0, 0};
         int low = 0;
-        int high = compiledPath.size();
+        int high = compiledPath.size()-1;
 
         while (high - low > 1){
             int mid = (low+high) / 2;
