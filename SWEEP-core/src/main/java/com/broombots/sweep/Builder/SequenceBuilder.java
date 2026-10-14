@@ -96,7 +96,7 @@ public class SequenceBuilder {
         speed = Math.min(speed, 1);
         speed = Math.max(speed,0);
         waypoints.add(new SplineWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),speed));
-        previousCoordinate = new Pos2D(x,y,0);
+        previousCoordinate = new Pos2D(x,y,Double.NaN);
         return this;
     }
 
@@ -110,7 +110,7 @@ public class SequenceBuilder {
     public SequenceBuilder splineTo(Pos2D definedCoordinate, double speed){
         speed = clipSpeedToRange(speed);
         waypoints.add(new SplineWaypoint(definedCoordinate.x,definedCoordinate.y,speed));
-        previousCoordinate = definedCoordinate;
+        previousCoordinate = new Pos2D(definedCoordinate.x,definedCoordinate.y, Double.NaN); // Not a Number signals that the angle must dynamically set after the spline to segment.
         return this;
     }
     /**
@@ -125,7 +125,7 @@ public class SequenceBuilder {
     public SequenceBuilder splineToAngle(double x, double y, double angle, double speed){
         speed = clipSpeedToRange(speed);
         waypoints.add(new SplineAngleWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),angle,speed));
-        previousCoordinate = new Pos2D(x,y,0);
+        previousCoordinate = new Pos2D(x,y,angle);
         return this;
     }
     /**

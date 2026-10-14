@@ -27,15 +27,15 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
         robotMass = 10; // Kg for a light weight FTC robot - Should be tuned
     }
 
-    public double getMaxVelocity(double direction, double angleError){
+    public double getMaxVelocity(double direction){
         // 1.5 m/s for the average robot
-        return (robotTopSpeedStraight / 2 * Math.sqrt(2)) * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
+        return (robotTopSpeedStraight / 2 * Math.sqrt(2)) * MecanumDriveAcceleration.getMovementMagnitude(direction);
     }
     public double getMaxAngleVelocity(){
         return 360/timeForFullTurn; // degrees per second
     }
-    public double getMaxStableAcceleration(double direction, double angleError){
-        return getAverageIndividualWheelAcceleration() * MecanumDriveAcceleration.getMovementMagnitude(direction, angleError);
+    public double getMaxStableAcceleration(double direction){
+        return getAverageIndividualWheelAcceleration() * MecanumDriveAcceleration.getMovementMagnitude(direction);
     }
     public double getMaxStableAngularAcceleration(double movementMagnitude, boolean clockwise){
         return 200; // degrees / s^2 Simple values similar to what road runners defaults are. I will tune a basic chassis to this and make those values the default later.

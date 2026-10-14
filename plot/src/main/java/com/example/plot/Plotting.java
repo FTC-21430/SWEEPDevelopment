@@ -35,6 +35,7 @@ public class Plotting {
                 .start(start)
                 .splineToAngle(0,20,90, 1)
                 .splineToAngle(20,20,90, 1)
+                .addBreak()
                 .end(40, 0, 0,0.3)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
