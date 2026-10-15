@@ -12,7 +12,6 @@ android {
     defaultConfig {
         minSdkVersion 24
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 28
     }
 
     compileOptions {
@@ -23,6 +22,12 @@ android {
         singleVariant("release"){
             withSourcesJar()
         }
+    }
+    lint {
+        targetSdk 28
+    }
+    testOptions {
+        targetSdk 28
     }
 }
 
