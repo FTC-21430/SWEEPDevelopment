@@ -169,7 +169,7 @@ public class PathProcessor {
 //
             double angularDifference = wrapDegrees(currentPoint.position.angle - lastPoint.position.angle);
             double angularSign = Math.signum(angularDifference);
-            double angularVelocity = calculateNewVelocity(Math.abs(angularDifference), movementParameters.getMaxStableAngularAcceleration(Math.hypot(currentPoint.velocity.x, currentPoint.velocity.y), angularSign > 0), Math.abs(lastPoint.velocity.angle));
+            double angularVelocity = calculateNewVelocity(Math.abs(angularDifference), movementParameters.getMaxStableAngularAcceleration(newVelocityScalar, angularSign > 0), Math.abs(lastPoint.velocity.angle));
             angularVelocity *= angularSign;
             if (Math.abs(angularVelocity) > movementParameters.getMaxAngleVelocity()) angularVelocity = movementParameters.getMaxAngleVelocity() * angularSign;
             if (i % 25 == 0){

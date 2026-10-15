@@ -33,8 +33,8 @@ public class Plotting {
 
         Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
                 .start(start)
-                .splineToAngle(0,20,90, 1)
-                .splineToAngle(20,20,90, 1)
+                .splineToAngle(20,223,123, 1)
+                .splineToAngle(404,-73,321, 1)
                 .addBreak()
                 .end(40, 0, 0,0.3)
                 .build();

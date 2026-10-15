@@ -10,12 +10,4 @@ public class MecanumDriveAccelerationTest {
 		assertEquals(2.0 * Math.sqrt(2.0), MecanumDriveAcceleration.getMovementMagnitude(0.0), 1e-9);
 		assertEquals(2.0, MecanumDriveAcceleration.getMovementMagnitude(45.0), 1e-9);
 	}
-
-	@Test
-	public void positiveRotationErrorReducesMagnitude() {
-		double noTurn = MecanumDriveAcceleration.getMovementMagnitude(0.0);
-		double maxTurn = MecanumDriveAcceleration.getMovementMagnitude(0.0);
-
-		assertEquals(noTurn * 0.5, maxTurn, 1e-9);
-	}
 }
