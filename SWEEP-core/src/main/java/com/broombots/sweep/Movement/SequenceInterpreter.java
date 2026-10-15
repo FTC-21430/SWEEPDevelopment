@@ -5,15 +5,15 @@ import com.broombots.sweep.Classes.LocalizationPacket;
 import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.RobotMovementParameters;
-import com.broombots.sweep.Classes.Timer;
+import com.broombots.sweep.Classes.SWEEPTimer;
 
 public class SequenceInterpreter {
     private Sequence currentSequence;
-    private Timer timer;
+    private SWEEPTimer sweepTimer;
     private RobotMovementController controller;
     public SequenceInterpreter(RobotMovementParameters robotMovementParameters){
         currentSequence = null;
-        timer = new Timer();
+        sweepTimer = new SWEEPTimer();
         controller = new RobotMovementController(robotMovementParameters.getPIDCoefficients());
     }
     public void startPath(Sequence sequence){
@@ -21,11 +21,11 @@ public class SequenceInterpreter {
         currentSequence = sequence;
     }
     public Pos2D update(LocalizationPacket localizationPacket){
-        if (timer.getSeconds() > currentSequence.getLastTime()) currentSequence = null;
+        if (sweepTimer.getSeconds() > currentSequence.getLastTime()) currentSequence = null;
         if (currentSequence == null) return new Pos2D(0,0,0);
 
         currentSequence.updateActions(localizationPacket);
-        return controller.getRobotDrivePowers(localizationPacket, currentSequence.getMovement(timer.getSeconds()));
+        return controller.getRobotDrivePowers(localizationPacket, currentSequence.getMovement(sweepTimer.getSeconds()));
     }
 
     public String updateSimulation(LocalizationPacket localizationPacket){
@@ -35,10 +35,10 @@ public class SequenceInterpreter {
         return getPathPoint().position;
     }
     public Pos2D getRobotTargetVelocity(){
-        return currentSequence.getMovement(timer.getSeconds()).velocity;
+        return currentSequence.getMovement(sweepTimer.getSeconds()).velocity;
     }
     public PathPoint getPathPoint(){
-        return currentSequence.getMovement(timer.getSeconds());
+        return currentSequence.getMovement(sweepTimer.getSeconds());
     }
     public boolean hasActiveSequence(){
         return currentSequence != null;

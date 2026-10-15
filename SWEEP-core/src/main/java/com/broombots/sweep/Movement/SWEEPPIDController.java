@@ -1,8 +1,7 @@
 package com.broombots.sweep.Movement;
 
-import com.broombots.sweep.Classes.Timer;
+import com.broombots.sweep.Classes.SWEEPTimer;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Disabled
@@ -39,7 +38,7 @@ public class SWEEPPIDController {
   private double lastTime, lastError;
 
   // The runtime instance from the main op-mode
-  private Timer runtime;
+  private SWEEPTimer runtime;
   private boolean shouldWrap = true;
 
   private double minWrap = 0.0, maxWrap = 0.0;
@@ -51,7 +50,7 @@ public class SWEEPPIDController {
    * @param dConstant - Derivative Constant - used for tuning the Derivative factor
    * @param runtime - The runtime instance from the main op-mode
    */
-  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, Timer runtime) {
+  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, SWEEPTimer runtime) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;
     this.iConstant = iConstant;
@@ -64,7 +63,7 @@ public class SWEEPPIDController {
     lastTime = runtime.getSeconds();
   }
 
-  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, Timer runtime, boolean shouldWrap) {
+  public SWEEPPIDController(double pConstant, double iConstant, double dConstant, SWEEPTimer runtime, boolean shouldWrap) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;
     this.iConstant = iConstant;

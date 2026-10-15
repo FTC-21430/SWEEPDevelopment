@@ -8,7 +8,6 @@ import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Splines.Segment;
 import com.broombots.sweep.Splines.Segments.WaitSegment;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class PathProcessor {

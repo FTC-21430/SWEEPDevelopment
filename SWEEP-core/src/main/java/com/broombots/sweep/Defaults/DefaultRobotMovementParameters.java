@@ -50,12 +50,13 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
         return 40;
     }
 
-    @Override
+
     /** coefficient matrix in form
      * xy : p i d
      * angle : p i d
      * vX X : p i d
      */
+    @Override
     public SimpleMatrix getPIDCoefficients(){
         SimpleMatrix coeffs = new SimpleMatrix(3,3);
         coeffs.set(0,0, standardPositionP);

@@ -27,16 +27,14 @@ public class Plotting {
     public static void main(String[] args) throws PythonExecutionException, IOException {
 
         PathPoint start = new PathPoint();
-        start.position = new Pos2D(-20,10,0);
+        start.position = new Pos2D(0,0,0);
         start.velocity = new Pos2D(0,0,0);
         start.time = 0;
 
         Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
                 .start(start)
-                .splineToAngle(20,223,123, 1)
-                .splineToAngle(404,-73,321, 1)
-                .addBreak()
-                .end(40, 0, 0,0.3)
+                .splineToAngle(-40,0,60,1)
+                .end(0, 20, 0,0.0)
                 .build();
         SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
     }

@@ -12,6 +12,7 @@ android {
     defaultConfig {
         minSdkVersion 24
         //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 30
     }
 
     compileOptions {
@@ -24,10 +25,10 @@ android {
         }
     }
     lint {
-        targetSdk 28
+        targetSdk 25
     }
     testOptions {
-        targetSdk 28
+        targetSdk 25
     }
 }
 

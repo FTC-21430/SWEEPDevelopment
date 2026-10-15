@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
 import com.broombots.sweep.Classes.Pos2D;
+import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
+import com.broombots.sweep.Movement.SequenceInterpreter;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -28,6 +30,9 @@ public class TemplateBot extends SWEEPRobot {
      * @param telemetry   The telemetry object used for sending data to the driver station.
      */
     public TemplateBot(HardwareMap hardwareMap, Telemetry telemetry){
+        this.telemetry = telemetry;
+        robotMovementParameters = new DefaultRobotMovementParameters();
+        sequenceInterpreter = new SequenceInterpreter(robotMovementParameters);
         super.localization = gobildaLocalization;
         runtime = new ElapsedTime();
         this.drivetrain = new Drivetrain(hardwareMap, telemetry, false);
@@ -43,6 +48,8 @@ public class TemplateBot extends SWEEPRobot {
     @Override
     public void initialize() {
         drivetrain.enableFieldCentricDriving(false);
+        localization = gobildaLocalization;
+        localization.overrideLocalization(0,0,0);
     }
     /**
      * Updates the robot's subsystems and actions during teleop mode.
@@ -66,12 +73,15 @@ public class TemplateBot extends SWEEPRobot {
         if (sequenceInterpreter.hasActiveSequence()){
             resultingPowers = sequenceInterpreter.update(localization.getLocalizationPacket());
         }
-        drivetrain.updateMovementVector(resultingPowers.x,resultingPowers.y, resultingPowers.angle);
-        //Localization update
+        telemetry.addData("power x", resultingPowers.x);
+        telemetry.addData("power y", resultingPowers.y);
+        telemetry.addData("power angle", resultingPowers.angle);
+        drivetrain.updateMovementVector(resultingPowers.x, resultingPowers.y, resultingPowers.angle);
+        drivetrain.update();
         //Other sweep logic
-
         telemetry.update();
     }
+
     // Subsystem getters
     public Drivetrain getDrivetrain() {
         return drivetrain;
@@ -79,7 +89,7 @@ public class TemplateBot extends SWEEPRobot {
     // Robot action definitions
     /**
      * Creates an ExampleAction to demonstrate how actions should be defined
-     * @param coordinate The coordinate around which the action is triggered.
+     * @param position The coordinate around which the action is triggered.
      * @param time       The duration for which the action runs (in seconds).
      * @param range      The trigger radius for the action (in inches).
      * @return An instance of ExampleAction.

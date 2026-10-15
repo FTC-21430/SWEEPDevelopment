@@ -1,6 +1,7 @@
 package com.broombots.sweep.Classes;
 
 import com.broombots.sweep.Builder.Sequence;
+import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.broombots.sweep.Movement.SequenceInterpreter;
 
 /**
@@ -10,8 +11,8 @@ import com.broombots.sweep.Movement.SequenceInterpreter;
  */
 public abstract class SWEEPRobot extends Robot {
     public Localization localization;
-    public RobotMovementParameters robotMovementParameters;
-    public SequenceInterpreter sequenceInterpreter = new SequenceInterpreter(robotMovementParameters);
+    public RobotMovementParameters robotMovementParameters = new DefaultRobotMovementParameters();
+    public SequenceInterpreter sequenceInterpreter;
     // Default range and time for actions to be triggered during autonomous operation
     private double defaultActionRange = 6; // Default range for actions to be triggered
     private double defaultActionTime = 0; // Default time for actions to be triggered

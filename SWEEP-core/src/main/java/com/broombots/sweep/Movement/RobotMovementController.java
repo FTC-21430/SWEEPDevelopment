@@ -3,8 +3,7 @@ package com.broombots.sweep.Movement;
 import com.broombots.sweep.Classes.LocalizationPacket;
 import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
-import com.broombots.sweep.Classes.Timer;
-import com.qualcomm.robotcore.hardware.PIDCoefficients;
+import com.broombots.sweep.Classes.SWEEPTimer;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -25,11 +24,11 @@ public class RobotMovementController {
 
          */
 
-        SWEEPPIDController positionXController = new SWEEPPIDController(movementCoeffs.get(0,0), movementCoeffs.get(0,1), movementCoeffs.get(0,2), new Timer());
-        SWEEPPIDController positionYController = new SWEEPPIDController(movementCoeffs.get(0,0), movementCoeffs.get(0,1), movementCoeffs.get(0,2), new Timer());
-        SWEEPPIDController positionAngleController = new SWEEPPIDController(movementCoeffs.get(1,0), movementCoeffs.get(1,1), movementCoeffs.get(1,2), new Timer());
-        SWEEPPIDController velocityXController = new SWEEPPIDController(movementCoeffs.get(2,0), movementCoeffs.get(2,1), movementCoeffs.get(2,2), new Timer());
-        SWEEPPIDController velocityYController = new SWEEPPIDController(movementCoeffs.get(2,0), movementCoeffs.get(2,1), movementCoeffs.get(2,2), new Timer());
+        positionXController = new SWEEPPIDController(movementCoeffs.get(0,0), movementCoeffs.get(0,1), movementCoeffs.get(0,2), new SWEEPTimer());
+        positionYController = new SWEEPPIDController(movementCoeffs.get(0,0), movementCoeffs.get(0,1), movementCoeffs.get(0,2), new SWEEPTimer());
+        positionAngleController = new SWEEPPIDController(movementCoeffs.get(1,0), movementCoeffs.get(1,1), movementCoeffs.get(1,2), new SWEEPTimer());
+        velocityXController = new SWEEPPIDController(movementCoeffs.get(2,0), movementCoeffs.get(2,1), movementCoeffs.get(2,2), new SWEEPTimer());
+        velocityYController = new SWEEPPIDController(movementCoeffs.get(2,0), movementCoeffs.get(2,1), movementCoeffs.get(2,2), new SWEEPTimer());
     }
     public Pos2D getRobotDrivePowers(LocalizationPacket localizationPacket, PathPoint currentTarget){
         positionXController.setTarget(currentTarget.position.x);
@@ -53,8 +52,6 @@ public class RobotMovementController {
 
         Pos2D powerFieldCentric = new Pos2D(xPower,yPower,anglePower);
         return powerFieldCentric.rotateAroundZeroBy(powerFieldCentric.angle);
-
-
     }
 
 
