@@ -31,7 +31,7 @@ public class TemplateBot extends SWEEPRobot {
      */
     public TemplateBot(HardwareMap hardwareMap, Telemetry telemetry){
         this.telemetry = telemetry;
-        robotMovementParameters = new DefaultRobotMovementParameters();
+        robotMovementParameters = new DebuggingRobotMovementParameters();
         sequenceInterpreter = new SequenceInterpreter(robotMovementParameters);
         super.localization = gobildaLocalization;
         runtime = new ElapsedTime();
@@ -40,6 +40,7 @@ public class TemplateBot extends SWEEPRobot {
                 drivetrain,
         };
         gobildaLocalization = new GobildaLocalization(hardwareMap,telemetry,xOffset,yOffset,true);
+        gobildaLocalization.calibrate();
     }
     /**
      * Initializes the robot's subsystems and sets up any necessary configurations.
@@ -47,7 +48,7 @@ public class TemplateBot extends SWEEPRobot {
      */
     @Override
     public void initialize() {
-        drivetrain.enableFieldCentricDriving(false);
+        drivetrain.enableFieldCentricDriving(true);
         localization = gobildaLocalization;
         localization.overrideLocalization(0,0,0);
     }

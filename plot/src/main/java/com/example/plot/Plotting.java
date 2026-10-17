@@ -32,9 +32,10 @@ public class Plotting {
         start.time = 0;
 
         Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
-                .start(start)
-                .splineToAngle(-40,0,60,1)
-                .end(0, 20, 0,0.0)
+                .start(0, 0, 0) // All paths must have a start point as the first
+                .splineToAngle(0,10,0,1)
+                .waitAt(50)
+                .end(0, 0, 0) // robot will move to the end point with the specified coordinates and heading
                 .build();
         SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
     }

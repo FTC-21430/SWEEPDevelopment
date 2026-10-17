@@ -97,9 +97,14 @@ public class SWEEPPIDController {
     }
     iSum += error *deltaTime;
 
-    
-    // The derivative factor scales down the Proportional factor so that we don't over shoot our target.
-    double derivative = (error - lastError) / deltaTime;
+    double derivative;
+    if (deltaTime > 1e-7) {
+
+      // The derivative factor scales down the Proportional factor so that we don't over shoot our target.
+      derivative = (error - lastError) / deltaTime;
+    }else{
+      derivative = 0;
+    }
     
     // the proportional factor affected by the derivative factor to get our output
     power = -error * pConstant +(-iSum * iConstant) + (-dConstant * derivative);

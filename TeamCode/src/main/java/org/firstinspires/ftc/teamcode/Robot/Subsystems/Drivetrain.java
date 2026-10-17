@@ -80,6 +80,7 @@ public class Drivetrain implements Subsystem {
      * @param Yaw The desired rotation
      */
     public void updateMovementVector(double X, double Y, double Yaw){
+        fieldCentricDrivingEnabled = false;
         this.X = X;
         this.Y = Y;
         this.Yaw = Yaw;
@@ -92,6 +93,7 @@ public class Drivetrain implements Subsystem {
      * @param robotYaw The current robot yaw
      */
     public void updateMovementVector(double X, double Y, double Yaw, double robotYaw){
+        fieldCentricDrivingEnabled = true;
         updateMovementVector(X,Y,Yaw);
         this.robotYaw = robotYaw;
     }

@@ -13,7 +13,7 @@ public class DefaultRobotMovementParameters implements RobotMovementParameters {
     public static double standardPositionP = 1;
     public static double standardPositionI = 0.002;
     public static double standardPositionD = 0.2;
-    public static double rotationP = 1;
+    public static double rotationP = 0.1;
     public static double rotationI = 0.01;
     public static double rotationD = 0.05;
     public static double velocityP = 0.2;
