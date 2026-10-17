@@ -278,7 +278,7 @@ public class SequenceBuilder {
                         getWaypointInRange(i - 1),
                         wp,
                         wp));
-//                segments.add(new WaitSegment(wp.getCoordinate(), 0.1));
+                segments.add(new WaitSegment(wp.getCoordinate(), 0.4));
             } else {
                 segments.add(createNewSegment(i));
             }

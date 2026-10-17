@@ -18,9 +18,9 @@ public class DebuggingRobotMovementParameters implements RobotMovementParameters
     public static double standardPositionP = 0.95;
     public static double standardPositionI = 0.12;
     public static double standardPositionD = 0.01;
-    public static double rotationP = 0.12;
+    public static double rotationP = 0.07;
     public static double rotationI = 0.02;
-    public static double rotationD = 0.0;
+    public static double rotationD = 0.0005;
     public static double velocityP = 0.09;
     public static double velocityI = 0.004;
     public static double velocityD = 0.001;
