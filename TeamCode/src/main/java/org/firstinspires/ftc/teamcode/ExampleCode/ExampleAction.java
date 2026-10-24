@@ -33,5 +33,6 @@ public class ExampleAction extends SWEEPAction {
     }
     @Override public void end(){
         // This is where you would put the code that you want to run when this action is completed
+        // isInterrupted() is true when the action was stopped early, use it to skip finishing moves and make things safe
     }
 }

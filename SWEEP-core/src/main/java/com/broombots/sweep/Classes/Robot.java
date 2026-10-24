@@ -48,7 +48,7 @@ public abstract class Robot {
     /**
      * @return the alliance the robot has been set to
      */
-    public Alliance getAlliance(){
+    protected Alliance getAlliance(){
         return this.alliance;
     }
 
@@ -56,7 +56,7 @@ public abstract class Robot {
      * Sets the alliance for the robot
      * @param alliance alliance
      */
-    public void setAlliance(Alliance alliance){
+    protected void setAlliance(Alliance alliance){
         this.alliance = alliance;
     }
 
@@ -83,7 +83,7 @@ public abstract class Robot {
      * Stops all subsystems and displays an emergency stop message on the telemetry.
      * Ensure that all subsystems have their disabled functions implemented properly.
      */
-    public void emergencyStop(){
+    protected void emergencyStop(){
         for (Subsystem subsystem : subsystems){
             subsystem.setDisabled(true);
         }
@@ -101,22 +101,43 @@ public abstract class Robot {
      * Returns all subsystems of the robot.
      * @return array of subsystems
      */
-    public Subsystem[] getAllSubsystems(){
+    protected Subsystem[] getAllSubsystems(){
         return subsystems;
     }
     /**
      * Updates all active actions. This method should be called in the main update loop of the robot.
      * It processes each active action, checks for completion, and removes completed actions from the active list.
      */
-    public void updateActions(){
+    protected void updateActions(){
         // Iterate a snapshot because process() and end() may start new actions, which modifies activeActions
         for (Action action : new ArrayList<>(activeActions)){
-            action.process();
-            if (action.completion()){
+            if (action.hasEnded()){
+                // interrupted directly through Action.interrupt(), end() already ran so only drop it
                 activeActions.remove(action);
-                action.end();
+                continue;
+            }
+            action.process();
+            // while interrupting, only the action's own recovery check (or its optional timeout) can release it
+            boolean done = action.interrupting ? action.canReleaseAfterInterrupt() : action.completion();
+            if (done){
+                activeActions.remove(action);
+                action.finish();
             }
         }
+    }
+    /**
+     * Requests an interrupt of a running action. If it is accepted and the action is already safe to release it is
+     * removed immediately; otherwise it stays active, keeps being processed while it recovers, and is removed by
+     * updateActions() once its isSafeToRelease() returns true.
+     * @param action the action to interrupt
+     * @return true if the interrupt was accepted (the action may still be recovering), false if it blocked the
+     * interrupt or is not running
+     */
+    public boolean interruptAction(Action action){
+        if (action == null || !activeActions.contains(action)) return false;
+        if (!action.interrupt()) return false;
+        if (action.hasEnded()) activeActions.remove(action);
+        return true;
     }
     /**
      * Runs a given action. This method should be called to start an action and add it to the list of active actions.
