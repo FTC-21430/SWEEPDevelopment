@@ -187,11 +187,26 @@ public class SequenceBuilder {
         return this;
     }
     public SequenceBuilder start(PathPoint startingPoint){
-        startingPoint.time = 0;
-        waypoints.add(new StartWaypoint(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle));
-        previousCoordinate = new Pos2D(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle);
-        this.startingPoint = startingPoint;
+        PathPoint copy = copyOf(startingPoint); // copied so building never changes the caller's point
+        copy.time = 0;
+        waypoints.add(new StartWaypoint(copy.position.x, copy.position.y, copy.position.angle));
+        previousCoordinate = new Pos2D(copy.position.x, copy.position.y, copy.position.angle);
+        this.startingPoint = copy;
         return this;
+    }
+    /**
+     * Copies a path point so the builder never shares or modifies a point owned by the caller or by a built path.
+     * A missing velocity is treated as at rest.
+     * @param point the point to copy
+     * @return a deep copy of the point
+     */
+    private static PathPoint copyOf(PathPoint point){
+        PathPoint copy = new PathPoint();
+        copy.time = point.time;
+        copy.position = new Pos2D(point.position.x, point.position.y, point.position.angle);
+        copy.velocity = point.velocity == null ? new Pos2D(0,0,0)
+                : new Pos2D(point.velocity.x, point.velocity.y, point.velocity.angle);
+        return copy;
     }
     /**
      * Replaces this builder's start with the given point, copying its pose, velocity and time.
@@ -199,11 +214,7 @@ public class SequenceBuilder {
      * @param point the last point of the sequence being extended
      */
     void continueFrom(PathPoint point){
-        PathPoint copy = new PathPoint();
-        copy.time = point.time;
-        copy.position = new Pos2D(point.position.x, point.position.y, point.position.angle);
-        copy.velocity = point.velocity == null ? new Pos2D(0,0,0)
-                : new Pos2D(point.velocity.x, point.velocity.y, point.velocity.angle);
+        PathPoint copy = copyOf(point);
         if (waypoints.isEmpty()) waypoints.add(new StartWaypoint(copy.position));
         else waypoints.set(0, new StartWaypoint(copy.position));
         previousCoordinate = copy.position;
@@ -217,9 +228,7 @@ public class SequenceBuilder {
      * @return The current PathBuilder instance, allowing for method chaining.
      */
     public SequenceBuilder start(Pos2D coordinate){
-        waypoints.add(new StartWaypoint(coordinate));
-        previousCoordinate = coordinate;
-        return this;
+        return start(coordinate.x, coordinate.y, coordinate.angle);
     }
     /**
      * Adds an end waypoint to the path.
@@ -289,7 +298,9 @@ public class SequenceBuilder {
         if (movementParameters == null) throw new RuntimeException("Robot movement parameters must be defined");
         if (sampleRate <= 10e-9) throw new RuntimeException("SampleRate must be a positive, non negative number that is not lost in floating point rounding");
 
-        startingPoint.time += time;
+        // Work on a copy so the offset applies to this build only and the stored start is never modified
+        PathPoint buildStart = copyOf(startingPoint);
+        buildStart.time += time;
 
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
@@ -310,7 +321,7 @@ public class SequenceBuilder {
         }
 
         PathProcessor profileProcessor = new PathProcessor(movementParameters);
-        ArrayList<Object> pathData = profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint, endingSpeedRatio);
+        ArrayList<Object> pathData = profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, buildStart, endingSpeedRatio);
         return new Sequence((ArrayList<PathPoint>) pathData.get(0), actions.toArray(new SWEEPAction[0]), (ArrayList<Double>) pathData.get(1));
     }
     /**
