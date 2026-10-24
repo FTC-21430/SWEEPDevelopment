@@ -70,6 +70,14 @@ public class SequenceBuilder {
         return this;
     }
 
+    public SequenceBuilder resetBuilder(){
+        waypoints.clear();
+        actions.clear();
+        previousCoordinate = new Pos2D(0,0,0);
+        endingSpeedRatio = 0.0;
+        return this;
+    }
+
     /**
      * Adds an action to the path.
      * If the action does not have a position set, it will be set to the previous coordinate.
@@ -179,10 +187,27 @@ public class SequenceBuilder {
         return this;
     }
     public SequenceBuilder start(PathPoint startingPoint){
+        startingPoint.time = 0;
         waypoints.add(new StartWaypoint(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle));
         previousCoordinate = new Pos2D(startingPoint.position.x, startingPoint.position.y, startingPoint.position.angle);
         this.startingPoint = startingPoint;
         return this;
+    }
+    /**
+     * Replaces this builder's start with the given point, copying its pose, velocity and time.
+     * Used when appending to a running sequence so the new path is continuous with the old one.
+     * @param point the last point of the sequence being extended
+     */
+    void continueFrom(PathPoint point){
+        PathPoint copy = new PathPoint();
+        copy.time = point.time;
+        copy.position = new Pos2D(point.position.x, point.position.y, point.position.angle);
+        copy.velocity = point.velocity == null ? new Pos2D(0,0,0)
+                : new Pos2D(point.velocity.x, point.velocity.y, point.velocity.angle);
+        if (waypoints.isEmpty()) waypoints.add(new StartWaypoint(copy.position));
+        else waypoints.set(0, new StartWaypoint(copy.position));
+        previousCoordinate = copy.position;
+        startingPoint = copy;
     }
     /**
      * Adds a start waypoint to the path using a defined coordinate.
@@ -264,9 +289,7 @@ public class SequenceBuilder {
         if (movementParameters == null) throw new RuntimeException("Robot movement parameters must be defined");
         if (sampleRate <= 10e-9) throw new RuntimeException("SampleRate must be a positive, non negative number that is not lost in floating point rounding");
 
-//        if (startingPoint.velocity.getMagnitude() > 1e-5) {
-//            createWaypointFromStartingVelocity(startingPoint, waypoints.get(1));
-//        }
+        startingPoint.time += time;
 
         ArrayList<Segment> segments = new ArrayList<Segment>();
 
@@ -310,7 +333,7 @@ public class SequenceBuilder {
                 // END is handled directly in build() — a FollowSplineSegment is created there.
                 throw new RuntimeException("END waypoints must be handled in build(), not createNewSegment()");
             case BREAK:
-                return  new WaitSegment(waypoint.getCoordinate(), 0.05);
+                return  new WaitSegment(waypoint.getCoordinate(), 1e-8);
             //TODO: Add more cases for new waypoint types as they are created
             //IDEA: Segment that forces the robot to always look at a specified coordinate on the field, with a linear and cubic spline version
         }
@@ -331,15 +354,36 @@ public class SequenceBuilder {
         waypointIndex = Math.min(waypointIndex,waypoints.size()-1);
         return waypoints.get(waypointIndex);
     }
-    // Create a CatmullRom tangent waypoint for before the starting point to ensure that the generated path will start in the direction of the current momentum.
+    /**
+     * Creates the Catmull-Rom control point placed before the start so the path leaves the start
+     * in the direction the robot is already moving.
+     * <p>
+     * Catmull-Rom sets the start tangent to 0.5 * (next - handle), so the handle is placed at
+     * next - 2 * m * directionOfTravel, which gives a start tangent of length m (inches per unit of curve).
+     * m is the distance the robot needs to brake from its current speed, v^2 / (2a), where a is the
+     * max stable acceleration in the direction of travel. A faster start therefore gets a longer, straighter lead-in.
+     * m is capped at the straight line distance to the next waypoint so close targets do not produce huge loops.
+     * <p>
+     * Known limitation (accepted for now): this only shapes the path geometry. The speed profile in PathProcessor
+     * does not carry the start speed forward, so if the next waypoint is closer than the braking distance the
+     * profile drops the speed faster than the max acceleration allows (the robot is asked to brake harder than it can).
+     * The path is still finite and ends exactly on the requested point.
+     * A zero start velocity gives m = 0, which places the handle on the next waypoint (the default Catmull-Rom start).
+     * @param startingPoint the point the new path starts from, its velocity is in inches per second
+     * @param nextPoint the first waypoint after the start
+     * @return a waypoint to use as the control point before the start
+     */
     private Waypoint createWaypointFromStartingVelocity(PathPoint startingPoint, Waypoint nextPoint) {
-        double timestep = 12; //seconds TODO: Tune value relative to acceleration?
-        double traveledDistance = startingPoint.velocity.getMagnitude() * timestep;
-        double angle = Pos2D.getMovementDirectionRad(new Pos2D(0, 0, 0), startingPoint.velocity) + Math.PI; // backward through time
-        Pos2D posAfterStep = new Pos2D(nextPoint.getX() - traveledDistance * Math.cos(angle), nextPoint.getY() - traveledDistance * Math.sin(angle), Math.toDegrees(angle-Math.PI));
-//        Pos2D handlePos = new Pos2D((nextPoint.getX()+posAfterStep.x)/2,(nextPoint.getY()+posAfterStep.y)/2, startingPoint.position.angle);
-        Pos2D handlePos = posAfterStep;
-        System.out.println("Handle Pos: " + handlePos.x + ", " + handlePos.y);
+        double speed = startingPoint.velocity.getMagnitude();
+        double directionRad = Math.atan2(startingPoint.velocity.y, startingPoint.velocity.x);
+        double acceleration = movementParameters.getMaxStableAcceleration(Math.toDegrees(directionRad));
+        double distanceToNext = Math.hypot(nextPoint.getX() - startingPoint.position.x, nextPoint.getY() - startingPoint.position.y);
+        double brakingDistance = acceleration > 0 ? speed * speed / (2 * acceleration) : 0;
+        double tangentLength = Math.min(brakingDistance, distanceToNext);
+        Pos2D handlePos = new Pos2D(
+                nextPoint.getX() - 2 * tangentLength * Math.cos(directionRad),
+                nextPoint.getY() - 2 * tangentLength * Math.sin(directionRad),
+                Math.toDegrees(directionRad));
         return new SplineAngleWaypoint(handlePos,1);
     }
     /**

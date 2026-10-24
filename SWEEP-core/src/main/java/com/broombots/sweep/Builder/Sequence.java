@@ -33,11 +33,33 @@ public class Sequence {
     public Sequence(ArrayList<PathPoint> compiledPath, SWEEPAction[] actions, ArrayList<Double> segmentTimeMarkers){
         if (compiledPath == null) throw new IllegalArgumentException("null path given");
         if (actions == null) throw new IllegalArgumentException("null action array given");
+        if (segmentTimeMarkers == null) throw new IllegalArgumentException("null segmentTimeMarkers given");
         this.compiledPath = compiledPath;
         this.actions = new ArrayList<>();
         this.segmentTimeMarkers = segmentTimeMarkers;
         Collections.addAll(this.actions, actions);
         System.out.println("Compiled path has " + compiledPath.size() + " points");
+    }
+
+    /**
+     * Adds the sequence built by the given SequenceBuilder to this sequence.
+     * The idea is that you can add additional movement onto the sequence you are currently running!
+     * The builder's own start point is ignored: the new path begins at the last point of this sequence
+     * (position, velocity and time), so the combined path is always continuous.
+     * @param sequenceBuilder the SequenceBuilder used to build the new sequence
+     */
+    public void addToSequence(SequenceBuilder sequenceBuilder){
+        if (sequenceBuilder == null) throw new IllegalArgumentException("null sequenceBuilder given");
+        if (compiledPath.isEmpty()) throw new IllegalStateException("Cannot append to a sequence with no path points");
+        sequenceBuilder.continueFrom(compiledPath.get(compiledPath.size()-1));
+        Sequence newSequence = sequenceBuilder.build();
+        // the new actions' spline indices are relative to the new markers, so shift them past the existing ones
+        for (SWEEPAction action : newSequence.actions){
+            action.setSplineIndex(action.getSplineIndex() + segmentTimeMarkers.size());
+        }
+        this.compiledPath.addAll(newSequence.compiledPath);
+        this.actions.addAll(newSequence.actions);
+        this.segmentTimeMarkers.addAll(newSequence.segmentTimeMarkers);
     }
 
     /**
@@ -66,10 +88,8 @@ public class Sequence {
         if (activeAction != null){
             if (activeAction.completion()) {
                 activeAction = null;
-            }else{
-
             }
-        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet, currentTime)){
+        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet, currentTime) && getTimeForSplineIndex(actions.get(0).getSplineIndex()) <= currentTime){
             if (actions.isEmpty()) return "";
             activeAction = actions.get(0);
             actions.remove(0);

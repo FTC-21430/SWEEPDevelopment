@@ -47,10 +47,20 @@ public class PathProcessor {
                 path.addAll(processMovementSegments(segmentList.toArray(new Segment[0]), sampleRate, prevPoint, speedRate, segmentTimeMarkers));
             }
         }
+        makeHeadingContinuous(path);
         ArrayList<Object> result = new ArrayList<>();
         result.add(path);
         result.add(segmentTimeMarkers);
         return result;
+    }
+    // Segments are built independently, so a 350 -> 10 turn can jump by 360 at a segment boundary; shift each heading to stay within 180 of the previous one
+    private void makeHeadingContinuous(ArrayList<PathPoint> path){
+        for (int i = 1; i < path.size(); i++){
+            double previous = path.get(i-1).position.angle;
+            Pos2D position = path.get(i).position;
+            if (Double.isNaN(previous) || Double.isNaN(position.angle)) continue;
+            position.angle = previous + wrapDegrees(position.angle - previous);
+        }
     }
     private ArrayList<ArrayList<Segment>> breakUpComplexRoute(Segment[] segments){
         ArrayList<ArrayList<Segment>> result = new ArrayList<>();
@@ -75,6 +85,15 @@ public class PathProcessor {
         for (Segment segment : segments){
             segmentTimeMarkers.add(lastTime);
             WaitSegment waitSegment = (WaitSegment) segment;
+            if (waitSegment.getDuration() <= 1e-7) {
+                Pos2D pos2D = waitSegment.getPosition(0);
+                PathPoint point = new PathPoint();
+                point.position = pos2D;
+                point.velocity = new Pos2D(0,0,0);
+                point.time = lastTime;
+                path.add(point);
+                continue;
+            }
             for (double t = lastTime; t < waitSegment.getDuration()+lastTime; t += sampleRate){
                 Pos2D pos2D = waitSegment.getPosition(t);
                 if (Double.isNaN(pos2D.angle)){

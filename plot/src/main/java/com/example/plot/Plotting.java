@@ -40,7 +40,6 @@ public class Plotting {
                 .splineToAngle(0,40,180,1)
                 .waitAt(2)
                 .splineToAngle(0,0,0,1)
-                .addAction()
                 .splineToAngle(0,40,0,1)
                 .waitAt(2)
                 .splineToAngle(0,0,0,1)
