@@ -57,8 +57,9 @@ public abstract class Action {
     }
     /**
      * Runs end() at most once per run, called by whatever finishes the action.
+     * Public so that other packages that run actions (such as a Sequence) can finish them without risking a second end().
      */
-    void finish(){
+    public void finish(){
         if (ended) return;
         ended = true;
         end();

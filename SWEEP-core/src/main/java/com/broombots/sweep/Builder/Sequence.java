@@ -71,7 +71,7 @@ public class Sequence {
     public void updateActions(LocalizationPacket packet, double currentTime){
         if (activeAction != null){
             if (activeAction.completion()) {
-                activeAction.end();
+                activeAction.finish();
                 activeAction = null;
             }else{
                 activeAction.process();
