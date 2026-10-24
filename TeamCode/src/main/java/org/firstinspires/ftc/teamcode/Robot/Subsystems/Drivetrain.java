@@ -63,12 +63,15 @@ public class Drivetrain implements Subsystem {
     @Override
     public void update() {
         // To the drive power every iteration
+        // Rotate a copy so the stored input is not rotated again on the next loop
+        double driveX = X;
+        double driveY = Y;
         if (fieldCentricDrivingEnabled){
             double[] fieldVector = calculateFieldCentric(robotYaw);
-            X = fieldVector[0];
-            Y = fieldVector[1];
+            driveX = fieldVector[0];
+            driveY = fieldVector[1];
         }
-        setDrivePower(X,Y,Yaw);
+        setDrivePower(driveX,driveY,Yaw);
         if (telemetryEnabled){
             postDrivetrainTelemetry();
         }
@@ -93,8 +96,8 @@ public class Drivetrain implements Subsystem {
      * @param robotYaw The current robot yaw
      */
     public void updateMovementVector(double X, double Y, double Yaw, double robotYaw){
+        updateMovementVector(X,Y,Yaw); // this clears the field-centric flag, so set it after
         fieldCentricDrivingEnabled = true;
-        updateMovementVector(X,Y,Yaw);
         this.robotYaw = robotYaw;
     }
     /**
@@ -144,10 +147,10 @@ public class Drivetrain implements Subsystem {
                 forward - strafe - rotate, //BL
                 forward + strafe - rotate  //BR
         };
-        // Calculate the max power value out of all possible solutions
+        // Calculate the largest power magnitude out of all possible solutions, reverse powers count too
         double maxPower = 0;
         for (double power : powers){
-            maxPower = Math.max(maxPower, power);
+            maxPower = Math.max(maxPower, Math.abs(power));
         }
         maxPower = maxPower > 1? maxPower : 1;
         // Apply motor power normalized to the greatest possible value
