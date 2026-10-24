@@ -6,7 +6,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests construction and initial-pose behavior of {@link StartWaypoint}.
+ */
 public class StartWaypointTest {
+	/** Verifies that constructor preserves coordinate. */
 	@Test
 	public void constructorPreservesCoordinate() {
 		StartWaypoint waypoint = new StartWaypoint(1.0, 2.0, 3.0);
@@ -16,7 +20,7 @@ public class StartWaypointTest {
 		assertEquals(3.0, waypoint.getAngle(), 1e-9);
 		assertEquals(Waypoint.WaypointType.START, waypoint.getType());
 	}
-
+	/** Verifies that coordinate constructor rejects null. */
 	@Test
 	public void coordinateConstructorRejectsNull() {
 		try {

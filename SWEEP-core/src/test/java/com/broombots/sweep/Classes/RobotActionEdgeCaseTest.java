@@ -8,7 +8,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/** Unusual action lifecycles driven through Robot.runAction and Robot.updateActions. */
+/** Tests unusual action lifecycle ordering, including actions started during processing or cleanup. */
 public class RobotActionEdgeCaseTest {
 	private static class TestRobot extends Robot {
 	}
@@ -18,33 +18,37 @@ public class RobotActionEdgeCaseTest {
 		final ArrayList<String> log;
 		boolean complete = true;
 
+		/** Creates a logging action that records lifecycle events in order. */
 		LoggingAction(Robot robot, String name, ArrayList<String> log) {
 			super(robot);
 			this.name = name;
 			this.log = log;
 		}
-
+		/** Executes the simulated action. */
 		@Override
 		public void execute() {
 			log.add(name + ".execute");
 		}
-
+		/** Runs one simulated action update. */
 		@Override
 		public void process() {
 			log.add(name + ".process");
 		}
-
+		/**
+		 * Reports whether the simulated action has completed.
+		 * @return localization packet at the requested position
+		 */
 		@Override
 		public boolean completion() {
 			return complete;
 		}
-
+		/** Ends the simulated action. */
 		@Override
 		public void end() {
 			log.add(name + ".end");
 		}
 	}
-
+	/** Verifies that action lifecycle runs in order. */
 	@Test
 	public void actionLifecycleRunsInOrder() {
 		TestRobot robot = new TestRobot();
@@ -55,12 +59,12 @@ public class RobotActionEdgeCaseTest {
 
 		assertEquals(Arrays.asList("A.execute", "A.process", "A.end"), log);
 	}
-
+	/** Verifies that updating with no actions does nothing. */
 	@Test
 	public void updatingWithNoActionsDoesNothing() {
 		new TestRobot().updateActions();
 	}
-
+	/** Verifies that actions finish independently of each other. */
 	@Test
 	public void actionsFinishIndependentlyOfEachOther() {
 		TestRobot robot = new TestRobot();
@@ -80,19 +84,20 @@ public class RobotActionEdgeCaseTest {
 		assertEquals(0, Collections(log, "slow.end"));
 		assertEquals(1, robot.activeActions.size());
 	}
-
+	/** Verifies that negative hold time completes immediately. */
 	@Test
 	public void negativeHoldTimeCompletesImmediately() {
 		TestRobot robot = new TestRobot();
 		Action action = new Action(robot) {
+			/** Executes the simulated action. */
 			@Override
 			public void execute() {
 			}
-
+			/** Runs one simulated action update. */
 			@Override
 			public void process() {
 			}
-
+			/** Ends the simulated action. */
 			@Override
 			public void end() {
 			}
@@ -101,13 +106,14 @@ public class RobotActionEdgeCaseTest {
 
 		assertTrue(action.completion());
 	}
-
+	/** Verifies that action can start another action from its end. */
 	@Test
 	public void actionCanStartAnotherActionFromItsEnd() {
 		TestRobot robot = new TestRobot();
 		ArrayList<String> log = new ArrayList<>();
 		LoggingAction second = new LoggingAction(robot, "second", log);
 		LoggingAction first = new LoggingAction(robot, "first", log) {
+			/** Ends the simulated action. */
 			@Override
 			public void end() {
 				super.end();
@@ -121,7 +127,7 @@ public class RobotActionEdgeCaseTest {
 
 		assertTrue("Chained action never ran: " + log, log.contains("second.execute"));
 	}
-
+	/** Verifies that action can start another action from process. */
 	@Test
 	public void actionCanStartAnotherActionFromProcess() {
 		TestRobot robot = new TestRobot();
@@ -129,7 +135,7 @@ public class RobotActionEdgeCaseTest {
 		LoggingAction spawned = new LoggingAction(robot, "spawned", log);
 		LoggingAction spawner = new LoggingAction(robot, "spawner", log) {
 			boolean spawnedOnce;
-
+			/** Runs one simulated action update. */
 			@Override
 			public void process() {
 				super.process();
@@ -144,7 +150,12 @@ public class RobotActionEdgeCaseTest {
 
 		assertTrue("Spawned action never ran: " + log, log.contains("spawned.execute"));
 	}
-
+	/**
+	 * Counts occurrences of an entry in the supplied log.
+	 * @param log ordered action-event log
+	 * @param entry action event to count
+	 * @return localization packet at the requested position
+	 */
 	private static int Collections(ArrayList<String> log, String entry) {
 		return java.util.Collections.frequency(log, entry);
 	}

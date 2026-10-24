@@ -6,7 +6,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests construction and duration behavior of {@link WaitWaypoint}.
+ */
 public class WaitWaypointTest {
+	/** Verifies that constructor preserves coordinate and duration. */
 	@Test
 	public void constructorPreservesCoordinateAndDuration() {
 		WaitWaypoint waypoint = new WaitWaypoint(7.0, 8.0, 9.0, 2.5);
@@ -17,7 +21,7 @@ public class WaitWaypointTest {
 		assertEquals(2.5, waypoint.getDuration(), 1e-9);
 		assertEquals(Waypoint.WaypointType.WAIT, waypoint.getType());
 	}
-
+	/** Verifies that coordinate constructor rejects null. */
 	@Test
 	public void coordinateConstructorRejectsNull() {
 		try {

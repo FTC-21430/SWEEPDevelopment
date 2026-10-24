@@ -4,58 +4,72 @@ import com.broombots.sweep.Classes.RobotMovementParameters;
 
 import org.ejml.simple.SimpleMatrix;
 
+/** Provides baseline motion limits and tunable PID gains for a mecanum-drive robot. */
 public class DefaultRobotMovementParameters implements RobotMovementParameters {
-    double robotMass;
-    private final double averageMotorForce = 8.5; // N Per Wheel on ground;
-    private final double robotTopSpeedStraight = 48; // inches/s
-    private final double timeForFullTurn = 1.2; // Seconds
+    /** Assumed robot mass in kilograms; retained for API compatibility, not used by the fixed limits. */
+    private double robotMass;
+    /** Maximum linear acceleration in inches per second squared. */
+    private final double robotTopAcceleration = 25;
+    /** Maximum angular acceleration in degrees per second squared. */
+    private final double robotTopAngularAcceleration = 10;
+    /** Maximum angular velocity in degrees per second. */
+    private final double robotTopAngularVelocity = 30;
+    /** Base speed value used by the mecanum maximum-speed calculation, in inches per second. */
+    private final double robotTopSpeedStraight = 40;
 
-    public static double standardPositionP = 1;
-    public static double standardPositionI = 0.002;
-    public static double standardPositionD = 0.2;
-    public static double rotationP = 0.1;
-    public static double rotationI = 0.01;
-    public static double rotationD = 0.05;
-    public static double velocityP = 0.2;
-    public static double velocityI = 0;
-    public static double velocityD = 0;
+    /** Public static for FTC Dashboard tuning; x/y position proportional gain (units follow the controller input and output). */
+    public static double standardPositionP = 0.95;
+    /** Public static for FTC Dashboard tuning; x/y position integral gain (units follow the controller input and output). */
+    public static double standardPositionI = 0.12;
+    /** Public static for FTC Dashboard tuning; x/y position derivative gain (units follow the controller input and output). */
+    public static double standardPositionD = 0.01;
+    /** Public static for FTC Dashboard tuning; heading proportional gain (units follow the controller input and output). */
+    public static double rotationP = 0.07;
+    /** Public static for FTC Dashboard tuning; heading integral gain (units follow the controller input and output). */
+    public static double rotationI = 0.02;
+    /** Public static for FTC Dashboard tuning; heading derivative gain (units follow the controller input and output). */
+    public static double rotationD = 0.0005;
+    /** Public static for FTC Dashboard tuning; x/y velocity proportional gain (units follow the controller input and output). */
+    public static double velocityP = 0.09;
+    /** Public static for FTC Dashboard tuning; x/y velocity integral gain (units follow the controller input and output). */
+    public static double velocityI = 0.004;
+    /** Public static for FTC Dashboard tuning; x/y velocity derivative gain (units follow the controller input and output). */
+    public static double velocityD = 0.001;
 
+    /** Creates movement parameters using a specified robot mass.
+     * @param robotMass robot mass in kilograms
+     */
     public DefaultRobotMovementParameters(double robotMass){
         this.robotMass = robotMass;
     }
+    /** Creates movement parameters with a 10 kg assumed robot mass. */
     public DefaultRobotMovementParameters(){
-        robotMass = 10; // Kg for a light weight FTC robot - Should be tuned
+        robotMass = 10;
     }
 
+    /** {@inheritDoc} */
     public double getMaxVelocity(double direction){
-        // 1.5 m/s for the average robot
-        return (robotTopSpeedStraight / 2 * Math.sqrt(2)) * MecanumDriveAcceleration.getMovementMagnitude(direction);
+        return robotTopSpeedStraight * MecanumDriveAcceleration.getMovementMagnitude(direction) * (Math.sqrt(2) / 2);
     }
+    /** {@inheritDoc} */
     public double getMaxAngleVelocity(){
-        return 360/timeForFullTurn; // degrees per second
+        return robotTopAngularVelocity;
     }
+    /** {@inheritDoc} */
     public double getMaxStableAcceleration(double direction){
-        return getAverageIndividualWheelAcceleration() * MecanumDriveAcceleration.getMovementMagnitude(direction);
+        return robotTopAcceleration * MecanumDriveAcceleration.getMovementMagnitude(direction);
     }
+    /** {@inheritDoc} */
     public double getMaxStableAngularAcceleration(double movementMagnitude, boolean clockwise){
-        return 200; // degrees / s^2 Simple values similar to what road runners defaults are. I will tune a basic chassis to this and make those values the default later.
+        return robotTopAngularAcceleration;
     }
-    private double getAverageIndividualWheelAcceleration(){
-        double metersAccel = averageMotorForce / robotMass; // N / Kg = m / s^2
-        return metersAccel * (100.0/2.45);
-    }
-
+    /** {@inheritDoc} */
     @Override
     public double getAngleFullPowerToErrorThreshold() {
         return 40;
     }
 
-
-    /** coefficient matrix in form
-     * xy : p i d
-     * angle : p i d
-     * vX X : p i d
-     */
+    /** {@inheritDoc} */
     @Override
     public SimpleMatrix getPIDCoefficients(){
         SimpleMatrix coeffs = new SimpleMatrix(3,3);

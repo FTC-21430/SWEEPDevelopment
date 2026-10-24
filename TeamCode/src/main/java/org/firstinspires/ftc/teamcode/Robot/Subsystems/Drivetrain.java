@@ -12,39 +12,46 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
  * This class handles the control of the robot's drivetrain, including field-centric driving and telemetry.
  */
 public class Drivetrain implements Subsystem {
-    // Motor declarations for the four mecanum wheels
-    private DcMotor FLMotor;
-    private DcMotor FRMotor;
-    private DcMotor BLMotor;
-    private DcMotor BRMotor;
-    // Array to hold the motors for easier iteration
+    /** Front-left drive motor. */
+    private final DcMotor flMotor;
+    /** Front-right drive motor. */
+    private final DcMotor frMotor;
+    /** Back-left drive motor. */
+    private final DcMotor blMotor;
+    /** Back-right drive motor. */
+    private final DcMotor brMotor;
+    /** Drive motors ordered front-left, front-right, back-left, back-right. */
     private final DcMotor[] motors;
-    // Flag to enable or disable field-centric driving
+    /** Whether movement inputs are rotated using the current robot heading. */
     private boolean fieldCentricDrivingEnabled = false;
-    // Variables to hold the desired movement vector and rotation, allows previous values to be stored and used in the update loop
-    private double X = 0,Y = 0,Yaw = 0;
-    // Variable to hold the robot's current yaw angle, used for field-centric calculations
-    private double robotYaw = 0; // From localization values, used to transform values to field centric
-    // Telemetry object for sending data to the driver station
-    private Telemetry telemetry;
-    // Flag to enable or disable telemetry output
+    /** Stored horizontal input power, unitless in the range -1 to 1. */
+    private double inputX = 0;
+    /** Stored vertical input power, unitless in the range -1 to 1. */
+    private double inputY = 0;
+    /** Stored rotation input power, unitless in the range -1 to 1. */
+    private double inputYaw = 0;
+    /** Current robot heading used for field-centric calculations, in degrees. */
+    private double robotYaw = 0;
+    /** Driver-station telemetry destination. */
+    private final Telemetry telemetry;
+    /** Whether drivetrain telemetry is posted during updates. */
     private boolean telemetryEnabled = false;
-    // Flag to indicate if the subsystem is disabled
+    /** Whether motor output is disabled. */
     private boolean disabled = false;
 
     /**
      * Constructor for the Drivetrain subsystem.
-     * @param hardwareMap The hardware map to initialize motors
-     * @param telemetry The telemetry object for sending data to the driver station
-     * @param telemetryEnabled Flag to enable or disable telemetry output
+     * @param hardwareMap hardware map used to retrieve the four drive motors
+     * @param telemetry telemetry destination for driver-station output
+     * @param telemetryEnabled whether to post drivetrain telemetry during updates
      */
     public Drivetrain(HardwareMap hardwareMap, Telemetry telemetry, boolean telemetryEnabled){
-        FLMotor = hardwareMap.get(DcMotor.class, "fl");
-        FRMotor = hardwareMap.get(DcMotor.class, "fr");
-        BLMotor = hardwareMap.get(DcMotor.class, "bl");
-        BRMotor = hardwareMap.get(DcMotor.class, "br");
+        flMotor = hardwareMap.get(DcMotor.class, "fl");
+        frMotor = hardwareMap.get(DcMotor.class, "fr");
+        blMotor = hardwareMap.get(DcMotor.class, "bl");
+        brMotor = hardwareMap.get(DcMotor.class, "br");
 
-        motors = new DcMotor[]{FLMotor,FRMotor,BLMotor,BRMotor};
+        motors = new DcMotor[]{flMotor,frMotor,blMotor,brMotor};
         for (DcMotor motor: motors){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -55,54 +62,55 @@ public class Drivetrain implements Subsystem {
     }
 
     /**
-     * Update method for the Drivetrain subsystem.
-     * This method is called every iteration of the main loop and updates the drivetrain's power based on the current movement vector and rotation.
-     * If field-centric driving is enabled, it transforms the movement vector based on the robot's current yaw angle.
-     * It also posts telemetry data if telemetry is enabled.
+     * Applies the stored movement command, optionally transforming a copy for field-centric driving, and posts telemetry.
      */
     @Override
     public void update() {
-        // To the drive power every iteration
+        // Apply the stored drive power every iteration
         // Rotate a copy so the stored input is not rotated again on the next loop
-        double driveX = X;
-        double driveY = Y;
+        double driveX = inputX;
+        double driveY = inputY;
         if (fieldCentricDrivingEnabled){
             double[] fieldVector = calculateFieldCentric(robotYaw);
             driveX = fieldVector[0];
             driveY = fieldVector[1];
         }
-        setDrivePower(driveX,driveY,Yaw);
+        setDrivePower(driveX,driveY,inputYaw);
         if (telemetryEnabled){
             postDrivetrainTelemetry();
         }
     }
     /**
-     * Update the movement vector for the drivetrain.
-     * @param X The desired X movement
-     * @param Y The desired Y movement
-     * @param Yaw The desired rotation
+     * Stores a robot-relative movement vector and disables field-centric transformation.
+     * The input convention is x for strafe and y for forward, but the existing mixer call passes x
+     * as its forward argument and y as its strafe argument; this surprising ordering is preserved.
+     * @param x horizontal movement input (intended strafe right when positive), unitless, -1 to 1
+     * @param y vertical movement input (intended forward when positive), unitless, -1 to 1
+     * @param yaw rotation input, unitless, -1 to 1
      */
-    public void updateMovementVector(double X, double Y, double Yaw){
+    public void updateMovementVector(double x, double y, double yaw){
         fieldCentricDrivingEnabled = false;
-        this.X = X;
-        this.Y = Y;
-        this.Yaw = Yaw;
+        this.inputX = x;
+        this.inputY = y;
+        this.inputYaw = yaw;
     }
     /**
-     * Update the movement vector and robot yaw for the drivetrain.
-     * @param X The desired X movement
-     * @param Y The desired Y movement
-     * @param Yaw The desired rotation
-     * @param robotYaw The current robot yaw
+     * Stores a movement vector, enables field-centric transformation, and uses robotYaw in degrees to rotate the input.
+     * The input convention is x for strafe and y for forward, but the existing mixer call passes x
+     * as its forward argument and y as its strafe argument; this ordering is preserved.
+     * @param x horizontal movement input (intended strafe right when positive), unitless, -1 to 1
+     * @param y vertical movement input (intended forward when positive), unitless, -1 to 1
+     * @param yaw rotation input, unitless, -1 to 1
+     * @param robotYaw current robot heading used to rotate the input, in degrees
      */
-    public void updateMovementVector(double X, double Y, double Yaw, double robotYaw){
-        updateMovementVector(X,Y,Yaw); // this clears the field-centric flag, so set it after
+    public void updateMovementVector(double x, double y, double yaw, double robotYaw){
+        updateMovementVector(x,y,yaw); // this clears the field-centric flag, so set it after
         fieldCentricDrivingEnabled = true;
         this.robotYaw = robotYaw;
     }
     /**
      * Enable or disable field-centric driving.
-     * @param enabled True to enable field-centric driving, false to disable
+     * @param enabled true to enable field-centric driving, false to disable
      */
     public void enableFieldCentricDriving(boolean enabled){
         this.fieldCentricDrivingEnabled = enabled;
@@ -110,7 +118,7 @@ public class Drivetrain implements Subsystem {
 
     /**
      * Set the disabled state of the drivetrain subsystem. Required function for all subsystems.
-     * @param disable True to disable the subsystem, false to enable
+     * @param disable true to disable the subsystem, false to enable
      */
     @Override
     public void setDisabled(boolean disable){
@@ -123,20 +131,20 @@ public class Drivetrain implements Subsystem {
     }
     /**
      * Calculate the field-centric movement vector based on the robot's current yaw angle.
-     * @param angle The current robot yaw angle in degrees
-     * @return An array containing the transformed X and Y movement values
+     * @param angle current robot yaw angle in degrees
+     * @return transformed x and y input powers, unitless
      */
     private double[] calculateFieldCentric(double angle){
         angle = AngleUnit.DEGREES.toRadians(angle); // convert to radians
-        double fieldY = Y * Math.cos(angle) + X * Math.sin(angle);
-        double fieldX = -Y * Math.sin(angle) + X * Math.cos(angle);
+        double fieldY = inputY * Math.cos(angle) + inputX * Math.sin(angle);
+        double fieldX = -inputY * Math.sin(angle) + inputX * Math.cos(angle);
         return new double[]{fieldX,fieldY};
     }
     /**
      * Set the drive power for the drivetrain.
-     * @param forward The forward/backward movement power
-     * @param strafe The left/right movement power
-     * @param rotate The rotational movement power
+     * @param forward forward/backward movement power, unitless
+     * @param strafe left/right movement power, unitless
+     * @param rotate rotational movement power, unitless
      */
     private void setDrivePower(double forward, double strafe, double rotate) {
         if (disabled) return;
@@ -163,9 +171,9 @@ public class Drivetrain implements Subsystem {
      */
     private void postDrivetrainTelemetry(){
         telemetry.addLine("---Drivetrain---");
-        telemetry.addData("X Power", X);
-        telemetry.addData("Y Power", Y);
-        telemetry.addData("Yaw Power", Yaw);
+        telemetry.addData("X Power", inputX);
+        telemetry.addData("Y Power", inputY);
+        telemetry.addData("Yaw Power", inputYaw);
         telemetry.addData("FCD Enabled", fieldCentricDrivingEnabled);
         telemetry.addData("FCD Angle", robotYaw);
     }

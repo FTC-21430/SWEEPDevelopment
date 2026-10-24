@@ -4,8 +4,8 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A path anchor waypoint that defines a target pose and movement mode for path generation.
- * This variant splits path generation continuity at the target pose.
+ * A break waypoint that marks a path continuity boundary at its target pose.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#addBreak()}.
  */
 public class BreakWaypoint implements Waypoint {
 	/**
@@ -16,7 +16,8 @@ public class BreakWaypoint implements Waypoint {
 	/**
 	 * Creates a break waypoint from an existing coordinate.
 	 *
-	 * @param coordinate target pose for this waypoint
+	 * @param coordinate target pose for this waypoint, with position in inches and heading in degrees
+	 * @throws IllegalArgumentException if coordinate is null
 	 */
 	public BreakWaypoint(Pos2D coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
@@ -25,6 +26,8 @@ public class BreakWaypoint implements Waypoint {
 	}
 
 	/**
+	 * Gets the target pose, with position in inches and heading in degrees.
+	 *
 	 * @return target pose for this waypoint
 	 */
 	@Override

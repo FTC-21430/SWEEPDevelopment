@@ -2,45 +2,47 @@
 package com.broombots.sweep.Classes;
 
 /**
- * A generic framework for how actions should be structured.
+ * Base class for robot actions with lifecycle, timing, and interruption support.
+ * Subclasses implement the action work while {@link Robot} manages execution and cleanup.
  */
 public abstract class Action {
-    // The robot that this action is being executed on
+    /** Robot running this action; package-visible for SWEEP action implementations. */
     Robot robot;
-    /** True once an interrupt has been accepted for the current run, so end() can switch to abort behaviour. */
+    /** Whether an interrupt was accepted for this run; package-visible to the robot lifecycle manager. */
     boolean interrupting = false;
+    /** Minimum sequence path time in seconds before a SWEEP action may trigger; package-visible to its trigger checks. */
     double waitTime = 0;
-    double holdTime = 0; // Default hold time of 0 seconds, can be changed in the constructor
-    // Timer to track how long the action has been running
+    /** Minimum active duration in seconds; package-visible for action implementations sharing timing state. */
+    double holdTime = 0;
+    /** Measures elapsed action time in seconds. */
     private final SWEEPTimer timer = new SWEEPTimer();
     /** True once end() has run for the current run, guarantees cleanup code is never executed twice. */
     private boolean ended = false;
     /** Seconds an interrupted action may spend recovering before it is force released, 0 or less means no limit. */
     private double recoveryTimeout = 0;
-    /** Measures how long the current interrupt has been recovering, restarted when an interrupt is first accepted. */
+    /** Measures interrupt recovery time in seconds, restarted when an interrupt is first accepted. */
     private final SWEEPTimer recoveryTimer = new SWEEPTimer();
 
-    /**
-     * Create a new action, called as a super,
-     * @param robot The robot that this action is being executed on.
+    /** Creates an action associated with the given robot.
+     * @param robot robot that will run this action
      */
     public Action(Robot robot){
         this.robot = robot;
     }
 
-    /**
-     * The hold time that the action should hold
-     * @param holdTime The duration in seconds for which the action should hold.
+    /** Sets the minimum active duration before this action can complete naturally.
+     * @param holdTime minimum duration in seconds
      */
     public void setHoldTime(double holdTime){
         this.holdTime = holdTime;
     }
+    /** Sets the wait duration used by subclasses or schedulers before this action may start.
+     * @param waitTime wait duration in seconds
+     */
     public void setWaitTime(double waitTime){
         this.waitTime = waitTime;
     }
-    /**
-     * Restarts the hold timer, called by whatever starts the action so hold time counts from the start, not construction.
-     */
+    /** Restarts this run's timer and clears lifecycle state before the action starts. */
     public void resetTimer(){
         timer.reset();
         interrupting = false;
@@ -64,20 +66,14 @@ public abstract class Action {
         ended = true;
         end();
     }
-    /**
-     * @return true if end() has already run for the current run
-     */
+    /** @return {@code true} if {@link #end()} has already run for this action run */
     boolean hasEnded(){
         return ended;
     }
-    /**
-     * Start the action - any initial logic
-     */
+    /** Performs one-time setup when the action starts. */
     public abstract void execute();
 
-    /**
-     * Update loop for the action, runs every master iteration
-     */
+    /** Performs one iteration of the action while it is active. */
     public abstract void process();
     /**
      * If another action is queued that conflicts with this action, stop this action safely.
@@ -91,6 +87,7 @@ public abstract class Action {
      * Override this to block an interrupt (return false without calling super); the flag stays unset until
      * an interrupt is accepted. Prefer {@link Robot#interruptAction(Action)} so the action is also removed from the
      * robot's active list once it has ended.
+     * @return {@code true} if the interrupt was accepted, {@code false} if this action blocks it
      */
     public boolean interrupt(){
         if (!interrupting) recoveryTimer.reset();
@@ -102,7 +99,7 @@ public abstract class Action {
      * Override for mechanisms that need time to recover after an interrupt, for example an arm that must be back in
      * a stable position before control can be released. Only asked while the action is being interrupted;
      * natural completion() is ignored during that time so a finished hold timer cannot cut recovery short.
-     * @return true once it is safe to call end() and drop the action, false to keep process() running
+     * @return {@code true} when it is safe to call {@link #end()} and release the action
      */
     protected boolean isSafeToRelease(){
         return true;
@@ -117,29 +114,22 @@ public abstract class Action {
     public void setRecoveryTimeout(double seconds){
         this.recoveryTimeout = seconds;
     }
-    /**
-     * @return true if the interrupt has been recovering for longer than the configured timeout
-     */
+    /** @return {@code true} if interrupt recovery has reached its configured timeout */
     protected final boolean didRecoveryTimeOut(){
         return interrupting && recoveryTimeout > 0 && recoveryTimer.getSeconds() >= recoveryTimeout;
     }
-    /**
-     * @return true if the action can be released now, either because it reports safe or its recovery timed out
-     */
+    /** @return {@code true} if the action is safe to release or its recovery timed out */
     boolean canReleaseAfterInterrupt(){
         return isSafeToRelease() || didRecoveryTimeOut();
     }
-    /**
-     * Used by the action manager to check if the action is naturally complete by specific conditions
-     * @return True if action is complete, False if it is still running
+    /** Determines whether this action has completed naturally.
+     * @return {@code true} when the action's hold duration has elapsed
      */
     public boolean completion(){
         return timer.getSeconds() >= holdTime;
     }
 
-    /**
-     * The last bit of code that will run once the action is completed naturally
-     */
+    /** Performs final cleanup when the action ends, naturally or after an accepted interrupt. */
     abstract public void end();
 
 }

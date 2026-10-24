@@ -4,8 +4,9 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A path anchor waypoint that defines a target pose and movement mode for path generation.
- * This variant requests curved spline translation where heading may follow path direction.
+ * A spline waypoint whose heading follows the direction of travel.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#splineTo(double, double, double)} and supplies a
+ * target position in inches.
  */
 public class SplineWaypoint implements Waypoint {
 	/**
@@ -35,6 +36,7 @@ public class SplineWaypoint implements Waypoint {
 	 *
 	 * @param coordinate target pose for this waypoint
 	 * @param speed segment speed scale relative to robot top speed
+	 * @throws IllegalArgumentException if coordinate is null
 	 */
 	public SplineWaypoint(Pos2D coordinate, double speed) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
@@ -44,6 +46,8 @@ public class SplineWaypoint implements Waypoint {
 	}
 
 	/**
+	 * Gets the target pose, with position in inches and heading in degrees.
+	 *
 	 * @return target pose for this waypoint
 	 */
 	@Override

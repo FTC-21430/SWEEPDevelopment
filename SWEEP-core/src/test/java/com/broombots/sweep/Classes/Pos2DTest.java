@@ -4,14 +4,16 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/** Tests vector magnitude, distance, clamped interpolation, and movement direction. */
 public class Pos2DTest {
+	/** Verifies that magnitude uses hypotenuse. */
 	@Test
 	public void magnitudeUsesHypotenuse() {
 		Pos2D point = new Pos2D(3.0, 4.0, 30.0);
 
 		assertEquals(5.0, point.getMagnitude(), 1e-9);
 	}
-
+	/** Verifies that distance between coordinates uses hypotenuse. */
 	@Test
 	public void distanceBetweenCoordinatesUsesHypotenuse() {
 		Pos2D first = new Pos2D(0.0, 0.0, 0.0);
@@ -19,7 +21,7 @@ public class Pos2DTest {
 
 		assertEquals(10.0, Pos2D.getDistanceBetweenCoordinates(first, second), 1e-9);
 	}
-
+	/** Verifies that lerp clamps below zero and above one. */
 	@Test
 	public void lerpClampsBelowZeroAndAboveOne() {
 		Pos2D start = new Pos2D(0.0, 0.0, 0.0);
@@ -35,7 +37,7 @@ public class Pos2DTest {
 		assertEquals(20.0, afterEnd.y, 1e-9);
 		assertEquals(30.0, afterEnd.angle, 1e-9);
 	}
-
+	/** Verifies that movement direction uses atan2. */
 	@Test
 	public void movementDirectionUsesAtan2() {
 		Pos2D from = new Pos2D(0.0, 1.0, 0.0);

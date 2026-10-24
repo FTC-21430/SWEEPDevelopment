@@ -1,63 +1,58 @@
 package com.broombots.sweep.Classes;
-/**
- * Waypoint interface, which is implemented by all waypoints in the robot's path.
- * Each waypoint must implement the getX(), getY(), getAngle(), getCoordinate(), getSpeed(), getDuration(), and getType() methods,
- * which are used to define the waypoint's position and behavior within the path.
- */
+
+/** Describes a position and movement instruction used to build a robot path. */
 public interface Waypoint {
-    /**
-     * The Waypoint enum defines the type of the waypoint which will change the behavior of path generation around this point.
-     * Some waypoints don't actually create new segments, but will serve other purposes, such as waiting at a point or breaking the path into multiple segments.
-     */
+    /** Kinds of waypoint that determine how sequence construction treats a point. */
     public enum WaypointType {
+        /** Cubic spline whose robot heading follows travel direction. */
         SPLINE,
+        /** Cubic spline with heading smoothly directed toward the waypoint angle. */
         SPLINE_ANGLE,
+        /** Cubic spline with heading offset from travel direction. */
+        SPLINE_OFFSET,
+        /** Reserved linear-motion waypoint type; not yet supported. */
         LINEAR,
+        /** Reserved linear-motion waypoint type with fixed heading; not yet supported. */
         LINEAR_ANGLE,
+        /** Stops at the point and separates adjacent path segments. */
         BREAK,
+        /** Holds the robot at the point for the waypoint duration. */
         WAIT,
+        /** Marks the beginning of a path; does not create a segment by itself. */
         START,
+        /** Marks the terminal path position and causes the path to stop there. */
         END
     }
 
-    /**
-     * Gets the X coordinate of the waypoint.
-     * @return
-     */
+    /** Returns the waypoint's field X coordinate.
+     * @return X position in inches */
     public double getX();
-    /**
-     * Gets the Y coordinate of the waypoint.
-     * @return
-     */
+    /** Returns the waypoint's field Y coordinate.
+     * @return Y position in inches */
     public double getY();
-    /**
-     * Gets the heading angle of the waypoint.
-     * @return
-     */
+    /** Returns the robot heading associated with this waypoint.
+     * @return heading in degrees */
     public double getAngle();
-    /**
-     * Gets the Pos2D object representing the waypoint's position and heading.
-     * @return
-     */
+    /** Returns the waypoint's field pose.
+     * @return position in inches and heading in degrees */
     public Pos2D getCoordinate();
 
-    /**
-     * Gets the speed at which the robot should move to this waypoint. If the waypoint does not require a specific speed, it returns 0 by default.
-     * @return the robot speed in terms of speed/max speed
-     */
+    /** Returns the requested speed ratio, if specified.
+     * @return speed as a fraction of the robot's maximum speed, defaulting to zero */
     default public double getSpeed(){
-        return 0; // If waypoint does not need speed, don't bother overriding it!
+        return 0;
     }
-    /**
-     * Gets the duration for which the robot should wait at this waypoint. If the waypoint does not require waiting, it returns 0 by default.
-     * @return the duration in seconds
-     */
+    /** Returns how long the robot waits at this waypoint; only wait waypoints have non-zero duration.
+     * @return wait duration in seconds, defaulting to zero */
     default public double getDuration(){
-        return 0; // Segment with no waiting at a single point
+        return 0;
     }
-    /**
-     * Gets the type of the waypoint, which defines its behavior in the path.
-     * @return the WaypointType of this waypoint
-     */
+    /** Returns the heading offset for spline-offset waypoints.
+     * @return offset from travel direction in degrees, positive counterclockwise; zero by default */
+    default public double getHeadingOffset(){
+        return 0;
+    }
+    /** Returns the movement or control behavior represented by this waypoint.
+     * @return this waypoint's type */
     public WaypointType getType();
 }

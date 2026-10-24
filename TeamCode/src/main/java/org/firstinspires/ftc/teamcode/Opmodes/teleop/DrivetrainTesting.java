@@ -2,12 +2,17 @@ package org.firstinspires.ftc.teamcode.Opmodes.teleop;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Utility;
 
 import org.firstinspires.ftc.teamcode.Robot.TemplateBot;
 
-@TeleOp
+/**
+ * Driver-operated drivetrain test.
+ * The left stick supplies horizontal and vertical inputs (x strafe, y forward); right-stick x rotates.
+ * The current drivetrain mixer maps x to its forward argument and y to its strafe argument, as documented there.
+ */
+@TeleOp(name = "DrivetrainTesting", group = "Teleop-Testing")
 public class DrivetrainTesting extends LinearOpMode {
+    /** Runs the drivetrain using the primary gamepad sticks until the opmode stops. */
     @Override
     public void runOpMode(){
         TemplateBot robot = new TemplateBot(hardwareMap, telemetry);

@@ -16,60 +16,82 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Checks that actions fire alongside the waypoint they were defined after, even when
- * wait segments exist and other parts of the route share the same trigger position.
+ * Checks that actions fire alongside their intended waypoint despite waits and repeated trigger positions.
+ * Tying actions to path progress prevents work from firing at the wrong visit as the robot follows a route.
  */
 public class SequenceActionTriggerTest {
+	/** Simulated action-update interval, in seconds. */
 	private static final double TIME_STEP = 0.005; // seconds between simulated control loops
+	/** Trigger-position radius, in inches. */
 	private static final double TOLERANCE = 1.0; // inches
+	/** Position visited twice by the route, in inches and degrees. */
 	private static final Pos2D SHARED_POSITION = new Pos2D(24, 0, 0);
 
+	/**
+	 * Creates localization data at the supplied robot pose.
+	 * @param position robot position in inches and heading in degrees
+	 * @return localization packet with zero velocity
+	 */
 	private static LocalizationPacket packetAt(Pos2D position) {
 		return new LocalizationPacket(position.x, position.y, position.angle, 0, 0);
 	}
 
+	/**
+	 * Creates a mutable list of waypoint-time markers.
+	 * @param times waypoint times in seconds
+	 * @return marker list
+	 */
 	private static ArrayList<Double> markers(Double... times) {
 		return new ArrayList<>(Arrays.asList(times));
 	}
 
-	/** Records the path time at which it was executed. */
+	/** Records trigger execution count and the simulated path time of execution. */
 	private static class RecordingAction extends SWEEPAction {
 		final Clock clock;
 		double executedAt = Double.NaN;
 		int executeCount;
 
+		/**
+		 * Creates an action tied to the supplied trigger position and waypoint.
+		 * @param clock simulated path clock
+		 * @param position trigger position in inches and heading in degrees, or null for an unplaced action
+		 * @param splineIndex waypoint marker index, or -1 for position-only triggering
+		 */
 		RecordingAction(Clock clock, Pos2D position, int splineIndex) {
 			super(new TestRobot(), position, 0.0, TOLERANCE, 0.0);
 			this.clock = clock;
 			setSplineIndex(splineIndex);
 		}
 
+		/** @return whether the action has executed at least once */
 		boolean hasExecuted() {
 			return executeCount > 0;
 		}
-
+		/** Executes the simulated action. */
 		@Override
 		public void execute() {
 			executeCount++;
 			executedAt = clock.now;
 		}
-
+		/** Runs one simulated action update. */
 		@Override
 		public void process() {
 		}
-
+		/** Ends the simulated action. */
 		@Override
 		public void end() {
 		}
 	}
 
+	/** Mutable path clock observed by recording actions; time is in seconds. */
 	private static class Clock {
 		double now;
 	}
 
+	/** Minimal robot instance for action tests without hardware dependencies. */
 	private static class TestRobot extends Robot {
 	}
-
+	/** Verifies that action is not triggered before its waypoint time even at the trigger position. */
 	@Test
 	public void actionIsNotTriggeredBeforeItsWaypointTimeEvenAtTheTriggerPosition() {
 		Clock clock = new Clock();
@@ -84,7 +106,7 @@ public class SequenceActionTriggerTest {
 
 		assertEquals(0, action.executeCount);
 	}
-
+	/** Verifies that action triggers once its waypoint time is reached at the trigger position. */
 	@Test
 	public void actionTriggersOnceItsWaypointTimeIsReachedAtTheTriggerPosition() {
 		Clock clock = new Clock();
@@ -98,7 +120,7 @@ public class SequenceActionTriggerTest {
 		assertEquals(1, action.executeCount);
 		assertEquals(5.0, action.executedAt, 1e-9);
 	}
-
+	/** Verifies that action past its waypoint time still needs the robot at the trigger position. */
 	@Test
 	public void actionPastItsWaypointTimeStillNeedsTheRobotAtTheTriggerPosition() {
 		Clock clock = new Clock();
@@ -110,7 +132,7 @@ public class SequenceActionTriggerTest {
 
 		assertEquals(0, action.executeCount);
 	}
-
+	/** Verifies that action triggers within tolerance of its position at its waypoint time. */
 	@Test
 	public void actionTriggersWithinToleranceOfItsPositionAtItsWaypointTime() {
 		Clock clock = new Clock();
@@ -122,7 +144,7 @@ public class SequenceActionTriggerTest {
 
 		assertEquals(1, action.executeCount);
 	}
-
+	/** Verifies that actions are held by their own waypoint time and fire in order. */
 	@Test
 	public void actionsAreHeldByTheirOwnWaypointTimeAndFireInOrder() {
 		Clock clock = new Clock();
@@ -140,7 +162,7 @@ public class SequenceActionTriggerTest {
 		assertTrue("Late action fired at " + late.executedAt, late.executedAt >= 6.0);
 		assertTrue(early.executedAt < late.executedAt);
 	}
-
+	/** Verifies that action waiting on awaypoint blocks later actions in the queue. */
 	@Test
 	public void actionWaitingOnAWaypointBlocksLaterActionsInTheQueue() {
 		Clock clock = new Clock();
@@ -153,7 +175,7 @@ public class SequenceActionTriggerTest {
 
 		assertEquals("Actions must run in the order they were added", 0, second.executeCount);
 	}
-
+	/** Verifies that wait time and waypoint time both have to be satisfied. */
 	@Test
 	public void waitTimeAndWaypointTimeBothHaveToBeSatisfied() {
 		Clock clock = new Clock();
@@ -168,7 +190,7 @@ public class SequenceActionTriggerTest {
 		sequence.updateActions(packetAt(SHARED_POSITION), 7.0);
 		assertEquals(1, action.executeCount);
 	}
-
+	/** Verifies that action without aspline index still triggers by position. */
 	@Test
 	public void actionWithoutASplineIndexStillTriggersByPosition() {
 		Clock clock = new Clock();
@@ -182,8 +204,11 @@ public class SequenceActionTriggerTest {
 	}
 
 	/**
-	 * Route that passes the shared position twice, with a wait at each visit, so a purely position based
-	 * trigger could fire on the wrong visit.
+	 * Builds a route that visits the shared position twice, with a wait at each visit.
+	 * A purely position-based trigger could otherwise fire on the wrong visit.
+	 * @param first action attached to the first visit
+	 * @param second action attached to the second visit
+	 * @return builder for the two-visit route
 	 */
 	private static SequenceBuilder revisitingRoute(RecordingAction first, RecordingAction second) {
 		return new SequenceBuilder(new DefaultRobotMovementParameters())
@@ -201,7 +226,11 @@ public class SequenceActionTriggerTest {
 				.end(72, 0, 0);
 	}
 
-	/** Drives the sequence the way the interpreter does, following the planned position exactly. */
+	/**
+	 * Drives the sequence the way the interpreter does, following the planned position exactly.
+	 * @param sequence sequence whose actions are simulated
+	 * @param clock clock updated on every simulation step, in seconds
+	 */
 	private static void simulate(Sequence sequence, Clock clock) {
 		for (double t = 0; t <= sequence.getLastTime(); t += TIME_STEP) {
 			clock.now = t;
@@ -209,7 +238,11 @@ public class SequenceActionTriggerTest {
 		}
 	}
 
-	/** Seconds at which the planned path is inside the tolerance of the shared position, as [enter, exit] pairs. */
+	/**
+	 * Finds path-time intervals during which the planned position is within trigger tolerance.
+	 * @param sequence planned route to inspect
+	 * @return seconds at which the path enters and exits the shared-position radius, as [enter, exit] pairs
+	 */
 	private static ArrayList<double[]> visitsToSharedPosition(Sequence sequence) {
 		ArrayList<double[]> visits = new ArrayList<>();
 		double enter = Double.NaN;
@@ -225,6 +258,7 @@ public class SequenceActionTriggerTest {
 		return visits;
 	}
 
+	/** Verifies that visits are distinct, rather than one continuous tolerance window. */
 	@Test
 	public void routeRevisitsTheSharedPositionSoTheScenarioIsMeaningful() {
 		Clock clock = new Clock();
@@ -234,6 +268,7 @@ public class SequenceActionTriggerTest {
 		assertTrue("Expected two separate visits", visitsToSharedPosition(sequence).size() >= 2);
 	}
 
+	/** Ensures waypoint markers distinguish the second visit from an earlier identical trigger position. */
 	@Test
 	public void actionAfterTheSecondWaitTriggersOnTheSecondVisitNotTheFirst() {
 		Clock clock = new Clock();
@@ -253,7 +288,7 @@ public class SequenceActionTriggerTest {
 		assertTrue("Second action fired at " + second.executedAt + " but the second visit began at "
 				+ secondVisit[0], second.executedAt >= secondVisit[0] && second.executedAt <= secondVisit[1]);
 	}
-
+	/** Verifies that action after the first wait still triggers at the first visit when queued behind nothing. */
 	@Test
 	public void actionAfterTheFirstWaitStillTriggersAtTheFirstVisitWhenQueuedBehindNothing() {
 		Clock clock = new Clock();

@@ -13,51 +13,69 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/** Tests for {@link Sequence#addToSequence(SequenceBuilder)}. */
+/**
+ * Verifies that appending a builder extends a planned path while preserving existing motion and actions.
+ * Correct joining lets a running route continue without discontinuities or lost work.
+ */
 public class SequenceAddToSequenceTest {
+	/** Position comparison tolerance, in inches; timing assertions use seconds. */
 	private static final double EPS = 1e-3;
+	/** Shared movement limits for both joined path segments. */
 	private static final RobotMovementParameters PARAMS = new DefaultRobotMovementParameters();
 
+	/** Minimal robot instance for action tests without hardware dependencies. */
 	private static class TestRobot extends Robot {
 	}
 
+	/** Action that counts executions to verify appended triggers are retained and shifted correctly. */
 	private static class FlagAction extends SWEEPAction {
 		int executeCount;
 
+		/** @param position action trigger position in inches and heading in degrees */
 		FlagAction(Pos2D position) {
 			super(new TestRobot(), position, 0, 1.0, 0.0);
 		}
-
+		/** Executes the simulated action. */
 		@Override
 		public void execute() {
 			executeCount++;
 		}
-
+		/** Runs one simulated action update. */
 		@Override
 		public void process() {
 		}
-
+		/** Ends the simulated action. */
 		@Override
 		public void end() {
 		}
 	}
 
+	/** @return builder configured with shared test limits and sampling step */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(PARAMS).setSampleRate(PathTestSupport.BUILD_SAMPLE_RATE);
 	}
 
+	/** @return first segment of the test route, in inches and degrees */
 	private static Sequence firstLeg() {
 		return builder().start(0, 0, 0).splineTo(20, 0, 1).end(40, 0, 0).build();
 	}
 
+	/** @return builder for the continuation segment, in inches and degrees */
 	private static SequenceBuilder secondLeg() {
 		return builder().start(40, 0, 0).splineTo(60, 0, 1).end(80, 0, 0);
 	}
 
+	/**
+	 * Creates localization data at a zero-heading position.
+	 * @param x robot x coordinate in inches
+	 * @param y robot y coordinate in inches
+	 * @return localization packet with zero heading and velocity
+	 */
 	private static LocalizationPacket packetAt(double x, double y) {
 		return new LocalizationPacket(x, y, 0, 0, 0);
 	}
 
+	/** The 0.05-second allowance covers the difference between independently sampled segment endpoints. */
 	@Test
 	public void appendedSequenceExtendsTheTotalDuration() {
 		Sequence sequence = firstLeg();
@@ -68,7 +86,7 @@ public class SequenceAddToSequenceTest {
 
 		assertEquals(firstDuration + secondDuration, sequence.getLastTime(), 0.05);
 	}
-
+	/** Verifies that appended sequence ends at the new endpoint. */
 	@Test
 	public void appendedSequenceEndsAtTheNewEndpoint() {
 		Sequence sequence = firstLeg();
@@ -79,7 +97,7 @@ public class SequenceAddToSequenceTest {
 		assertEquals(80, last.position.x, EPS);
 		assertEquals(0, last.position.y, EPS);
 	}
-
+	/** Verifies that original portion is left untouched. */
 	@Test
 	public void originalPortionIsLeftUntouched() {
 		Sequence sequence = firstLeg();
@@ -92,7 +110,7 @@ public class SequenceAddToSequenceTest {
 		assertEquals(before.x, after.x, EPS);
 		assertEquals(before.y, after.y, EPS);
 	}
-
+	/** Verifies that times never decrease across the join. */
 	@Test
 	public void timesNeverDecreaseAcrossTheJoin() {
 		Sequence sequence = firstLeg();
@@ -101,7 +119,7 @@ public class SequenceAddToSequenceTest {
 
 		PathTestSupport.assertTimesNeverDecrease(sequence);
 	}
-
+	/** Verifies that path stays finite across the join. */
 	@Test
 	public void pathStaysFiniteAcrossTheJoin() {
 		Sequence sequence = firstLeg();
@@ -111,7 +129,7 @@ public class SequenceAddToSequenceTest {
 		PathTestSupport.assertFinitePoseAndVelocity(sequence);
 		PathTestSupport.assertFiniteHeading(sequence);
 	}
-
+	/** Verifies that can append more than once. */
 	@Test
 	public void canAppendMoreThanOnce() {
 		Sequence sequence = firstLeg();
@@ -125,7 +143,7 @@ public class SequenceAddToSequenceTest {
 		assertTrue(sequence.getLastTime() > afterSecond);
 		assertEquals(120, sequence.getMovement(sequence.getLastTime()).position.x, EPS);
 	}
-
+	/** Verifies that appended actions are triggered after their time markers. */
 	@Test
 	public void appendedActionsAreTriggeredAfterTheirTimeMarkers() {
 		Sequence sequence = firstLeg();
@@ -140,7 +158,7 @@ public class SequenceAddToSequenceTest {
 		assertEquals(1, action.executeCount);
 		assertTrue(sequence.getLastTime() > firstDuration);
 	}
-
+	/** Verifies that appending actionless sequence keeps existing actions. */
 	@Test
 	public void appendingActionlessSequenceKeepsExistingActions() {
 		FlagAction action = new FlagAction(new Pos2D(0, 0, 0));
@@ -151,6 +169,7 @@ public class SequenceAddToSequenceTest {
 
 		assertEquals(1, action.executeCount);
 	}
+	/** Verifies that appending non zero time sequence to sequence. */
 	@Test
 	public void appendingNonZeroTimeSequenceToSequence(){
 		PathPoint startPoint = new PathPoint();
@@ -170,7 +189,7 @@ public class SequenceAddToSequenceTest {
 
 		assertEquals(originalSequence.getLastTime(), comparisonSequence.getLastTime(), 0.05);
 	}
-
+	/** Verifies that builder start time is ignored. */
 	@Test
 	public void builderStartTimeIsIgnored() {
 		Sequence sequence = firstLeg();
@@ -185,7 +204,7 @@ public class SequenceAddToSequenceTest {
 
 		assertEquals(firstDuration + secondDuration, sequence.getLastTime(), 0.05);
 	}
-
+	/** Verifies that builder start position is replaced by the end of the sequence. */
 	@Test
 	public void builderStartPositionIsReplacedByTheEndOfTheSequence() {
 		Sequence sequence = firstLeg();
@@ -198,7 +217,7 @@ public class SequenceAddToSequenceTest {
 		assertEquals(0, join.y, 0.5);
 		PathTestSupport.assertFinitePoseAndVelocity(sequence);
 	}
-
+	/** Verifies that builder start velocity is replaced by the end of the sequence. */
 	@Test
 	public void builderStartVelocityIsReplacedByTheEndOfTheSequence() {
 		Sequence sequence = firstLeg();
@@ -213,7 +232,7 @@ public class SequenceAddToSequenceTest {
 		PathTestSupport.assertFinitePoseAndVelocity(sequence);
 		assertEquals(0, PathTestSupport.speed(sequence.getMovement(firstDuration)), 1.0);
 	}
-
+	/** Verifies that action indices are shifted past the existing markers. */
 	@Test
 	public void actionIndicesAreShiftedPastTheExistingMarkers() {
 		Sequence sequence = firstLeg();

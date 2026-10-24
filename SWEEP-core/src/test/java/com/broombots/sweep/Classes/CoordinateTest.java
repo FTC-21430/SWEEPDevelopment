@@ -4,7 +4,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/** Tests coordinate construction, default heading, and distance calculations. */
 public class CoordinateTest {
+	/** Verifies that constructor preserves values. */
 	@Test
 	public void constructorPreservesValues() {
 		Coordinate coordinate = new Coordinate(12.5, -4.0, 90.0);
@@ -13,7 +15,7 @@ public class CoordinateTest {
 		assertEquals(-4.0, coordinate.getY(), 1e-9);
 		assertEquals(90.0, coordinate.getAngle(), 1e-9);
 	}
-
+	/** Verifies that two-argument constructor defaults angle to zero. */
 	@Test
 	public void twoArgConstructorDefaultsAngleToZero() {
 		Coordinate coordinate = new Coordinate(8.0, 3.0);
@@ -22,7 +24,7 @@ public class CoordinateTest {
 		assertEquals(3.0, coordinate.getY(), 1e-9);
 		assertEquals(0.0, coordinate.getAngle(), 1e-9);
 	}
-
+	/** Verifies that distance between coordinates uses Euclidean distance. */
 	@Test
 	public void distanceBetweenCoordinatesUsesEuclideanDistance() {
 		Coordinate first = new Coordinate(0.0, 0.0, 0.0);
