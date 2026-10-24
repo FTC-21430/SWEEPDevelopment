@@ -42,7 +42,7 @@ public class PathProcessor {
      */
     private final LerpFunction regression;
     /** Per-sample speed scales from the corresponding segments. */
-    private ArrayList<Double> speedRatios = new ArrayList<>();
+    private final ArrayList<Double> SPEED_RATIOS = new ArrayList<>();
 
     /**
      * Creates a processor using the robot's motion limits.
@@ -172,28 +172,24 @@ public class PathProcessor {
         ArrayList<PathPoint> path = new ArrayList<>();
         ArrayList<Integer> waypointIndexInPath = new ArrayList<>();
 
-        PathPoint stPoint = startingPoint;
-
-        if (Double.isNaN(stPoint.position.angle)){
+        if (Double.isNaN(startingPoint.position.angle)){
             // The first movement after an angle-unspecified wait continues from the last rendered heading.
-            stPoint.position = lastRenderedPosition;
+            startingPoint.position = lastRenderedPosition;
         }
 
-        path.add(stPoint);
+        path.add(startingPoint);
         // Keep a speed ratio for each point added to the path. The start point uses the first segment's
         // ratio; every sampled point uses its own segment's ratio. These ratios scale the local speed cap.
-        speedRatios.add(segments[0].getSpeedRate());
-        for (int i = 0; i < segments.length; i++){
-            Segment segment = segments[i];
+        SPEED_RATIOS.add(segments[0].getSpeedRate());
+        for (Segment segment : segments) {
             waypointIndexInPath.add(path.size());
-            for (double t = 0.0 + 1e-7; t < 1.0; t += sampleRate){
+            for (double t = 0.0 + 1e-7; t < 1.0; t += sampleRate) {
                 Pos2D pos2D = segment.getPosition(t);
                 PathPoint point = new PathPoint();
                 point.position = pos2D;
                 path.add(point);
-                speedRatios.add(segment.getSpeedRate());
+                SPEED_RATIOS.add(segment.getSpeedRate());
             }
-
         }
         waypointIndexInPath.add(path.size());
         PathPoint endPoint = new PathPoint();
@@ -214,8 +210,8 @@ public class PathProcessor {
 
         // Integrate time between samples using distance / average speed (trapezoidal approximation).
         // This is more accurate than using only the previous sample's speed when speed changes along the path.
-        double time = startingPoint.time;
-        segmentTimeMarkers.add(time);
+        double renderTime = startingPoint.time;
+        segmentTimeMarkers.add(renderTime);
 
         for (int i = 1; i < path.size(); i++){
             PathPoint lastPoint = path.get(i-1);
@@ -231,16 +227,16 @@ public class PathProcessor {
                 dt = 1e-5;
             }
 
-            time += dt;
+            renderTime += dt;
             if (waypointIndexInPath.contains(i)){
-                segmentTimeMarkers.add(time);
+                segmentTimeMarkers.add(renderTime);
             }
 
 
-            path.get(i).time = time;
+            path.get(i).time = renderTime;
         }
 
-        speedRatios.clear();
+        SPEED_RATIOS.clear();
         lastRenderedPosition = path.get(path.size()-1).position;
         return path;
     }
@@ -363,7 +359,7 @@ public class PathProcessor {
             deltaRadPerInch = changeInAngleRAD/averageTravelDistance;
         }
         // Movement parameters expect direction in degrees; regression input remains radians per inch.
-        return movementParameters.getMaxVelocity(Math.toDegrees(Pos2D.getMovementDirectionRad(currentPoint.position, lastPoint.position))) * regression.getValue(deltaRadPerInch) * speedRatios.get(idx);
+        return movementParameters.getMaxVelocity(Math.toDegrees(Pos2D.getMovementDirectionRad(currentPoint.position, lastPoint.position))) * regression.getValue(deltaRadPerInch) * SPEED_RATIOS.get(idx);
     }
     /** Normalizes an angle difference in radians to the shortest signed equivalent in [-pi, pi]. */
     private double wrapRadians(double angle) {
