@@ -3,52 +3,47 @@ package com.broombots.sweep.Movement;
 import com.broombots.sweep.Classes.SWEEPTimer;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
-
+/**
+ * Computes a bounded PID power output for a scalar target.
+ * Target and error use the caller's units, while output power is in the range -1 to 1.
+ */
 @Disabled
-
-//TODO Refactor this class and work on bringing up to date.
-//NOTE THIS CLASS SHOULD NOT BE REVIEWED OR USED FOR ANYTHING OTHER THAN REFERENCE. IT IS NOT CURRENTLY FUNCTIONAL AND IS IN THE PROCESS OF BEING REWRITTEN.
-
-
-/** This class is designed to make using PID controllers easier when programming.
-* all this does is takes in constants and the runtime, is given a target number and a current number.
-* then calculates what motor power would be needed to get there.
- * */
-
 public class SWEEPPIDController {
-    //Connects with the PIDFController class
-
-  // The constants that you need to tune specifically for each system
-  private double pConstant,iConstant, dConstant;
+  /** Proportional gain for the target's unit domain. */
+  private double pConstant;
+  /** Integral gain for the target's unit domain and seconds. */
+  private double iConstant;
+  /** Derivative gain for the target's unit domain per second. */
+  private double dConstant;
+  /** Accumulated error over elapsed seconds. */
   private double iSum=0;
-
-  private double iNormal;
-
-  // The motor power (-1.0 ~ 1.0) the PD controller outputs
+  /** Integral gain restored when integral mode is enabled. */
+  private final double iNormal;
+  /** Bounded controller output, in motor power from -1 to 1. */
   private double power;
-  public double powerProportional;
-  public double powerIntegral;
-  public double powerDerivative;
-
-  // The target number, NOTE this could be encoder ticks, degrees of rotation, or even inches on the field.
-  // This is just a number without a specified unit.
-  public double target;
-
-  // Some data from the last iteration of the control loop.
+  /** Proportional contribution to output power, retained for diagnostics. */
+  private double powerProportional;
+  /** Integral contribution to output power, retained for diagnostics. */
+  private double powerIntegral;
+  /** Derivative contribution to output power, retained for diagnostics. */
+  private double powerDerivative;
+  /** Target value in the caller's unit domain. */
+  private double target;
+  /** Previous update time in seconds and previous error in target units. */
   private double lastTime, lastError;
-
-  // The runtime instance from the main op-mode
-  private SWEEPTimer runtime;
+  /** Timer used to calculate update intervals, in seconds. */
+  private final SWEEPTimer runtime;
+  /** Whether errors are wrapped as angles in degrees. */
   private boolean shouldWrap = true;
-
+  /** Stored wrap bounds in target units; currently unused by {@link #update(double)}. */
   private double minWrap = 0.0, maxWrap = 0.0;
 
   /**
-   * This is the constructor for this class, this just assigns the constants from the specific mechanism.
-   * @param pConstant - Proportional Constant - used for tuning the Proportional factor.
-   * @param iConstant - Integral Constant- used for tuning the Integral factor
-   * @param dConstant - Derivative Constant - used for tuning the Derivative factor
-   * @param runtime - The runtime instance from the main op-mode
+   * Creates a controller that wraps errors as angles in degrees.
+   * @param pConstant proportional gain
+   * @param iConstant integral gain
+   * @param dConstant derivative gain
+   * @param runtime timer supplying elapsed time in seconds
    */
   public SWEEPPIDController(double pConstant, double iConstant, double dConstant, SWEEPTimer runtime) {
     this.pConstant = pConstant;
@@ -63,6 +58,14 @@ public class SWEEPPIDController {
     lastTime = runtime.getSeconds();
   }
 
+  /**
+   * Creates a controller with optional angular error wrapping.
+   * @param pConstant proportional gain
+   * @param iConstant integral gain
+   * @param dConstant derivative gain
+   * @param runtime timer supplying elapsed time in seconds
+   * @param shouldWrap whether to wrap error as an angle in degrees
+   */
   public SWEEPPIDController(double pConstant, double iConstant, double dConstant, SWEEPTimer runtime, boolean shouldWrap) {
     this.pConstant = pConstant;
     this.dConstant = dConstant;
@@ -76,6 +79,12 @@ public class SWEEPPIDController {
     lastTime = runtime.getSeconds();
   }
 
+  /**
+   * Replaces the controller gains.
+   * @param pConstant proportional gain
+   * @param iConstant integral gain
+   * @param dConstant derivative gain
+   */
   public void updatePIDConstants(double pConstant, double iConstant, double dConstant){
     this.pConstant = pConstant;
     this.dConstant = dConstant;
@@ -83,9 +92,8 @@ public class SWEEPPIDController {
   }
 
   /**
-   * This updates the output of the PID controller.
-   * @param currentPosition the current number from the motor,
-   *                        this is a sensor output that is used to calculate the new error
+   * Updates the bounded output power from the current measurement.
+   * @param currentPosition current value in the target's unit domain
    */
   public void update(double currentPosition) {
      double deltaTime = (runtime.getSeconds()-lastTime);
@@ -93,7 +101,7 @@ public class SWEEPPIDController {
     // added wrap to the error equation
     double error = currentPosition - target;
     if (shouldWrap) {
-      error = Utlities.wrap(error);
+      error = Utilities.wrap(error);
     }
     iSum += error *deltaTime;
 
@@ -127,26 +135,35 @@ public class SWEEPPIDController {
   }
   
   /**
-   * used to update the target of where you want to go
-   * @param target the position you want to go to
+   * Sets the target value.
+   * @param target target in the caller's unit domain
    */
   public void setTarget(double target) {
     this.target = target;
   }
   
   /**
-   * Used for getting the target in the turning code for teleop
-   * @return returns the target
+   * Gets the target value.
+   * @return target in the caller's unit domain
    */
   public double getTarget() {
     return target;
   }
   
+  /**
+   * Stores wrap bounds; these values are currently unused by {@link #update(double)}, which wraps to +/-180 degrees.
+   * @param min minimum bound in degrees
+   * @param max maximum bound in degrees
+   */
   public void setWrap(double min, double max){
     minWrap = min;
     maxWrap = max;
   }
 
+  /**
+   * Enables or disables integral contribution.
+   * @param mode {@code true} to restore the configured integral gain, or {@code false} to disable it
+   */
   public void setIntegralMode(boolean mode){
     if(mode){
       if (iConstant == 0){
@@ -159,19 +176,31 @@ public class SWEEPPIDController {
   }
 
   /**
-   * used to get the power output from the update function.
-   * @return type double which is the power of the motor, range of -1.0 ~ 1.0
+   * Gets the most recently calculated output power.
+   * @return output power from -1 to 1
    */
   public double getPower() {
     return power;
   }
-    public double getPConstant(){
-        return pConstant;
-    }
-    public double getIConstant(){
-        return iConstant;
-    }
-    public double getDConstant(){
-        return dConstant;
-    }
+  /**
+   * Gets the proportional gain.
+   * @return proportional gain
+   */
+  public double getPConstant(){
+    return pConstant;
+  }
+  /**
+   * Gets the integral gain.
+   * @return integral gain
+   */
+  public double getIConstant(){
+    return iConstant;
+  }
+  /**
+   * Gets the derivative gain.
+   * @return derivative gain
+   */
+  public double getDConstant(){
+    return dConstant;
+  }
 }

@@ -14,6 +14,7 @@ import static org.junit.Assert.assertTrue;
  * caller-owned points being modified by {@code start} and {@code build(time)}.
  */
 public class SequenceBuilderStateTest {
+	/** Verifies that builder. */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(new DefaultRobotMovementParameters()).setSampleRate(0.005);
 	}

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 /** Tests for splineToOffset and splineToBackwards: same curve as splineTo, heading shifted by a constant. */
 public class SequenceOffsetSplineTest {
 	private static final double TOLERANCE = 1e-6;
-
+	/** Verifies that builder. */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(new DefaultRobotMovementParameters()).setSampleRate(PathTestSupport.BUILD_SAMPLE_RATE)
 				.start(0, 0, 0);
@@ -36,7 +36,7 @@ public class SequenceOffsetSplineTest {
 		}
 		return settled;
 	}
-
+	/** Verifies that offset of zero matches spline to. */
 	@Test
 	public void offsetOfZeroMatchesSplineTo() {
 		Sequence plain = builder().splineTo(20, 15, 1).end(40, 0, 0).build();
@@ -49,7 +49,7 @@ public class SequenceOffsetSplineTest {
 			assertEquals(0, angleDifference(plain.getPosition(t).angle, offset.getPosition(t).angle), TOLERANCE);
 		}
 	}
-
+	/** Verifies that backwards follows the same curve as forwards. */
 	@Test
 	public void backwardsFollowsTheSameCurveAsForwards() {
 		Sequence plain = builder().splineTo(20, 15, 1).end(40, 0, 0).build();
@@ -61,7 +61,7 @@ public class SequenceOffsetSplineTest {
 			assertEquals(plain.getPosition(t).y, backwards.getPosition(t).y, TOLERANCE);
 		}
 	}
-
+	/** Verifies that backwards heading is opposite the direction of travel. */
 	@Test
 	public void backwardsHeadingIsOppositeTheDirectionOfTravel() {
 		Sequence plain = builder().splineTo(20, 15, 1).splineTo(40, 15, 1).end(60, 0, 0).build();
@@ -77,7 +77,7 @@ public class SequenceOffsetSplineTest {
 		}
 		assertTrue("too few samples were compared: " + checked, checked > 50);
 	}
-
+	/** Verifies that arbitrary offset is added to the direction of travel. */
 	@Test
 	public void arbitraryOffsetIsAddedToTheDirectionOfTravel() {
 		Sequence plain = builder().splineTo(20, 15, 1).end(40, 0, 0).build();
@@ -91,7 +91,7 @@ public class SequenceOffsetSplineTest {
 		}
 		assertTrue("too few samples were compared: " + checked, checked > 20);
 	}
-
+	/** Verifies that pos2 doverload matches the primitive overload and ignores its angle. */
 	@Test
 	public void pos2DOverloadMatchesThePrimitiveOverloadAndIgnoresItsAngle() {
 		Sequence primitive = builder().splineToOffset(20, 15, 180, 1).end(40, 0, 0).build();
@@ -100,7 +100,7 @@ public class SequenceOffsetSplineTest {
 		assertEquals(primitive.getLastTime(), object.getLastTime(), TOLERANCE);
 		assertEquals(primitive.getPosition(1).angle, object.getPosition(1).angle, TOLERANCE);
 	}
-
+	/** Verifies that out of range speed behaves like the nearest valid speed. */
 	@Test
 	public void outOfRangeSpeedBehavesLikeTheNearestValidSpeed() {
 		double fast = builder().splineToBackwards(20, 0, 1).end(40, 0, 0).build().getLastTime();
@@ -111,7 +111,7 @@ public class SequenceOffsetSplineTest {
 		assertEquals(fast, tooFast, 1e-9);
 		assertEquals(slow, tooSlow, 1e-9);
 	}
-
+	/** Verifies that waypoints beyond the field are clipped. */
 	@Test
 	public void waypointsBeyondTheFieldAreClipped() {
 		Sequence sequence = builder().splineToBackwards(500, 500, 1).end(40, 0, 0).build();
@@ -120,7 +120,7 @@ public class SequenceOffsetSplineTest {
 			assertTrue(Math.abs(point.position.x) < 100 && Math.abs(point.position.y) < 100);
 		}
 	}
-
+	/** Verifies that robot holds the backwards heading while waiting at the waypoint. */
 	@Test
 	public void robotHoldsTheBackwardsHeadingWhileWaitingAtTheWaypoint() {
 		Sequence sequence = builder().splineToBackwards(30, 0, 1).waitAt(1).end(60, 0, 0).build();
@@ -135,7 +135,7 @@ public class SequenceOffsetSplineTest {
 		}
 		assertTrue("never found the robot waiting at the waypoint", waiting > 50);
 	}
-
+	/** Verifies that mixed forward and backwards route builds and ends at the requested pose. */
 	@Test
 	public void mixedForwardAndBackwardsRouteBuildsAndEndsAtTheRequestedPose() {
 		Sequence sequence = builder().splineTo(20, 10, 1).addBreak().splineToBackwards(0, 30, 1).addBreak()

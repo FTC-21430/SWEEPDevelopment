@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
+/** Tests constant and linear interpolation, endpoint clamping, and invalid list sizes. */
 public class LerpFunctionTest {
+	/** Verifies that get value constant value test. */
 	@Test
 	public void getValue_constantValueTest() {
 		LerpFunction function = new LerpFunctionBuilder()
@@ -16,7 +18,7 @@ public class LerpFunctionTest {
 		assertEquals(1.0, function.getValue(100), 1e-9);
 		assertEquals(1.0, function.getValue(-100), 1e-9);
 	}
-
+	/** Verifies that get value linear interp test. */
 	@Test
 	public void getValue_linearInterpTest() {
 		LerpFunction function = new LerpFunctionBuilder()
@@ -27,7 +29,7 @@ public class LerpFunctionTest {
 		assertEquals(0.5, function.getValue(0.5), 1e-9);
 		assertEquals(1.0, function.getValue(1.0), 1e-9);
 	}
-
+	/** Verifies that get value handles middle points. */
 	@Test
 	public void getValue_handlesMiddlePoints() {
 		LerpFunction function = new LerpFunctionBuilder()
@@ -38,7 +40,7 @@ public class LerpFunctionTest {
 
 		assertEquals(75.0, function.getValue(7.5), 1e-9);
 	}
-
+	/** Verifies that constructor rejects mismatched lists. */
 	@Test(expected = IllegalArgumentException.class)
 	public void constructorRejectsMismatchedLists() {
 		ArrayList<Double> keyedPoints = new ArrayList<>();

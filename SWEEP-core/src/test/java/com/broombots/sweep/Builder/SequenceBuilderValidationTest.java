@@ -14,11 +14,21 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Checks rejected builder inputs and normalization of valid route and action configurations.
+ * Early validation prevents malformed paths from reaching runtime path following.
+ */
 public class SequenceBuilderValidationTest {
+	/** @return builder with standard test limits and a 0.005 sampling step */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(new DefaultRobotMovementParameters()).setSampleRate(0.005);
 	}
 
+	/**
+	 * Asserts that building fails with a message identifying the invalid input.
+	 * @param builder invalid builder under test
+	 * @param messagePart expected substring in the failure message
+	 */
 	private static void assertBuildFails(SequenceBuilder builder, String messagePart) {
 		try {
 			builder.build();
@@ -29,63 +39,72 @@ public class SequenceBuilderValidationTest {
 		}
 	}
 
+	/**
+	 * Creates localization data at a zero-heading position.
+	 * @param x robot x coordinate in inches
+	 * @param y robot y coordinate in inches
+	 * @return localization packet with zero heading and velocity
+	 */
 	private static LocalizationPacket packetAt(double x, double y) {
 		return new LocalizationPacket(x, y, 0, 0, 0);
 	}
 
+	/** Minimal robot instance used by an action without an assigned robot. */
 	private static class TestRobot extends Robot {
 	}
 
+	/** Action without an initial trigger position, for testing builder position assignment. */
 	private static class UnplacedAction extends SWEEPAction {
+		/** Creates an action without an initial trigger position. */
 		UnplacedAction() {
 			super(new TestRobot());
 		}
-
+		/** Executes the simulated action. */
 		@Override
 		public void execute() {
 		}
-
+		/** Runs one simulated action update. */
 		@Override
 		public void process() {
 		}
-
+		/** Ends the simulated action. */
 		@Override
 		public void end() {
 		}
 	}
-
+	/** Verifies that build without start fails. */
 	@Test
 	public void buildWithoutStartFails() {
 		assertBuildFails(builder().splineTo(20, 0, 1).end(40, 0, 0), "START");
 	}
-
+	/** Verifies that build without end fails. */
 	@Test
 	public void buildWithoutEndFails() {
 		assertBuildFails(builder().start(0, 0, 0).splineTo(20, 0, 1), "END");
 	}
-
+	/** Verifies that build with only one waypoint fails. */
 	@Test
 	public void buildWithOnlyOneWaypointFails() {
 		assertBuildFails(builder().start(0, 0, 0), "two waypoints");
 	}
-
+	/** Verifies that build with no waypoints fails. */
 	@Test
 	public void buildWithNoWaypointsFails() {
 		assertBuildFails(builder(), "two waypoints");
 	}
-
+	/** Verifies that build without movement parameters fails. */
 	@Test
 	public void buildWithoutMovementParametersFails() {
 		assertBuildFails(new SequenceBuilder(null).start(0, 0, 0).end(10, 0, 0), "movement parameters");
 	}
-
+	/** Verifies that zero and negative sample rates are rejected. */
 	@Test
 	public void zeroAndNegativeSampleRatesAreRejected() {
 		for (double rate : new double[]{0, -1, 1e-12}) {
 			assertBuildFails(builder().setSampleRate(rate).start(0, 0, 0).end(10, 0, 0), "SampleRate");
 		}
 	}
-
+	/** Verifies that adding anull action is rejected. */
 	@Test
 	public void addingANullActionIsRejected() {
 		try {
@@ -95,7 +114,7 @@ public class SequenceBuilderValidationTest {
 			// expected
 		}
 	}
-
+	/** Verifies that action without aposition triggers at the previous waypoint. */
 	@Test
 	public void actionWithoutAPositionTriggersAtThePreviousWaypoint() {
 		UnplacedAction action = new UnplacedAction();
@@ -106,7 +125,7 @@ public class SequenceBuilderValidationTest {
 		assertTrue(action.checkTrigger(packetAt(30, 20), 0));
 		assertFalse(action.checkTrigger(packetAt(0, 0), 0));
 	}
-
+	/** Verifies that action added right after start triggers at the start. */
 	@Test
 	public void actionAddedRightAfterStartTriggersAtTheStart() {
 		UnplacedAction action = new UnplacedAction();
@@ -115,7 +134,7 @@ public class SequenceBuilderValidationTest {
 
 		assertTrue(action.checkTrigger(packetAt(5, 6), 0));
 	}
-
+	/** Verifies that action with an explicit position keeps it. */
 	@Test
 	public void actionWithAnExplicitPositionKeepsIt() {
 		UnplacedAction action = new UnplacedAction();
@@ -127,6 +146,7 @@ public class SequenceBuilderValidationTest {
 		assertFalse(action.checkTrigger(packetAt(30, 20), 0));
 	}
 
+	/** Speeds below zero and above one are clamped to the valid range of spline speed ratios. */
 	@Test
 	public void outOfRangeSplineSpeedsBehaveLikeTheNearestValidSpeed() {
 		double slow = builder().start(0, 0, 0).splineTo(20, 0, 0).end(40, 0, 0).build().getLastTime();
@@ -138,6 +158,7 @@ public class SequenceBuilderValidationTest {
 		assertEquals(fast, tooFast, 1e-9);
 	}
 
+	/** A 500-inch waypoint should be clipped to the field corner at (72, 72), in inches. */
 	@Test
 	public void waypointsBeyondTheFieldAreClippedToItsEdge() {
 		Sequence sequence = builder().start(0, 0, 0).splineTo(500, 500, 1).end(40, 0, 0).build();
@@ -150,7 +171,7 @@ public class SequenceBuilderValidationTest {
 		}
 		assertTrue("Never reached the field corner, closest was " + closestToEdge, closestToEdge < 0.2);
 	}
-
+	/** Verifies that building the same builder twice gives the same path. */
 	@Test
 	public void buildingTheSameBuilderTwiceGivesTheSamePath() {
 		SequenceBuilder builder = builder().start(0, 0, 0).splineTo(20, 10, 1).waitAt(0.5).end(40, 0, 0);
@@ -165,6 +186,7 @@ public class SequenceBuilderValidationTest {
 		}
 	}
 
+	/** Checks equivalence of the primitive-coordinate and position-object overloads. */
 	@Test
 	public void pos2DAndPrimitiveOverloadsBuildTheSamePath() {
 		Sequence primitive = builder().start(0, 0, 0).splineTo(20, 10, 1).end(40, 0, 0).build();
@@ -178,7 +200,7 @@ public class SequenceBuilderValidationTest {
 
 		assertEquals(primitive.getLastTime(), objects.getLastTime(), 1e-9);
 	}
-
+	/** Verifies that build with astart time shifts the whole path. */
 	@Test
 	public void buildWithAStartTimeShiftsTheWholePath() {
 		SequenceBuilder builder = builder().start(0, 0, 0).splineTo(20, 0, 1).end(40, 0, 0);

@@ -6,7 +6,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests construction and target-pose behavior of {@link BreakWaypoint}.
+ */
 public class BreakWaypointTest {
+	/** Verifies that constructor preserves coordinate and zero speed. */
 	@Test
 	public void constructorPreservesCoordinateAndZeroSpeed() {
 		BreakWaypoint waypoint = new BreakWaypoint(new Pos2D(1.0, 2.0, 3.0));
@@ -17,7 +21,7 @@ public class BreakWaypointTest {
 		assertEquals(0.0, waypoint.getSpeed(), 1e-9);
 		assertEquals(Waypoint.WaypointType.BREAK, waypoint.getType());
 	}
-
+	/** Verifies that constructor rejects null. */
 	@Test
 	public void constructorRejectsNull() {
 		try {

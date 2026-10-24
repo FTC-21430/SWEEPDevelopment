@@ -9,26 +9,28 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * A Path is a collection of Segments that define a path for the robot to follow.
- * It also contains a list of actions that can be executed at specific times during the path.
- * A Path will have the finalized "animation" that the robot will follow, and then be passed to the movement controller to execute the path.
+ * A compiled, time-parameterized robot path with its queued actions.
+ * The sequence stores sampled poses and velocities for execution and schedules actions at their associated path times.
  */
 public class Sequence {
-    // The path that takes time and returns a Movement point, which provides the Pos2D position, velocity, and acceleration that the robot should be at that time
+    /** Sampled path poses, velocities, and times; positions are in inches, headings in degrees, velocities in inches per second, and times in seconds. */
     private final ArrayList<PathPoint> compiledPath;
 
-    // The actions that can be executed during the path, based on the position of the robot.
+    /** Actions scheduled to trigger during this sequence. */
     private final ArrayList<SWEEPAction> actions;
 
-    // The action that is currently being executed. This is used to determine if the action has completed and if the next action should be executed.
+    /** Action currently being processed, or {@code null} when none is active. */
     private SWEEPAction activeAction;
 
-    private ArrayList<Double> segmentTimeMarkers;
+    /** Start times in seconds indexed by waypoint segment index. */
+    private final ArrayList<Double> segmentTimeMarkers;
 
     /**
-     * Constructs a Path with the given segments and actions.
-     * @param compiledPath the velocityMap that makes up the entire path - this will be based off of the robot Params
-     * @param actions The actions that can be executed during the path.
+     * Constructs a sequence from compiled path points, actions, and segment start times.
+     * @param compiledPath sampled path states with positions in inches, headings in degrees, velocities in inches per second, and times in seconds
+     * @param actions the actions that can be executed during the sequence
+     * @param segmentTimeMarkers start times in seconds for each spline segment, indexed by waypoint segment index
+     * @throws IllegalArgumentException if any argument is {@code null}
      */
     public Sequence(ArrayList<PathPoint> compiledPath, SWEEPAction[] actions, ArrayList<Double> segmentTimeMarkers){
         if (compiledPath == null) throw new IllegalArgumentException("null path given");
@@ -38,15 +40,16 @@ public class Sequence {
         this.actions = new ArrayList<>();
         this.segmentTimeMarkers = segmentTimeMarkers;
         Collections.addAll(this.actions, actions);
-        System.out.println("Compiled path has " + compiledPath.size() + " points");
     }
 
     /**
      * Adds the sequence built by the given SequenceBuilder to this sequence.
-     * The idea is that you can add additional movement onto the sequence you are currently running!
+     * Appends movement to the sequence currently being built or run.
      * The builder's own start point is ignored: the new path begins at the last point of this sequence
      * (position, velocity and time), so the combined path is always continuous.
-     * @param sequenceBuilder the SequenceBuilder used to build the new sequence
+     * @param sequenceBuilder the builder used to build the appended sequence
+     * @throws IllegalArgumentException if {@code sequenceBuilder} is {@code null}
+     * @throws IllegalStateException if this sequence has no path points
      */
     public void addToSequence(SequenceBuilder sequenceBuilder){
         if (sequenceBuilder == null) throw new IllegalArgumentException("null sequenceBuilder given");
@@ -65,8 +68,8 @@ public class Sequence {
     /**
      * Check the first action in queue based on robot location data, and execute it if met.
      * Shifts the queue forward if the front is executed
-     * @param packet The localization packet containing the robot's current position and state.
-     * @param currentTime Seconds since the sequence started, actions wait until this passes their wait time.
+     * @param packet current robot localization with position in inches and heading in degrees
+     * @param currentTime elapsed sequence time in seconds
      */
     public void updateActions(LocalizationPacket packet, double currentTime){
         if (activeAction != null){
@@ -84,6 +87,12 @@ public class Sequence {
             activeAction.execute();
         }
     }
+    /**
+     * Advances simulated action scheduling without executing the action.
+     * @param packet current robot localization in inches and degrees
+     * @param currentTime elapsed sequence time in seconds
+     * @return the action class name string returned by {@code Class.toString()}, or an empty string if none would start
+     */
     public String updateActionsInSimulation(LocalizationPacket packet, double currentTime){
         if (activeAction != null){
             if (activeAction.completion()) {
@@ -98,6 +107,7 @@ public class Sequence {
         return "";
     }
 
+    /** Finds the path sample indices surrounding the requested sequence time. */
     private int[] getClosestIdxToTime(double time){
         if (compiledPath.isEmpty()) return new int[]{0, 0};
         int low = 0;
@@ -114,33 +124,19 @@ public class Sequence {
 
         return new int[]{low, high};
     }
+    /** Returns the sequence time associated with a path sample index. */
     private double getTimeForSplineIndex(int index){
         if (segmentTimeMarkers.isEmpty()) return 0;
         index = Math.max(0, Math.min(index, segmentTimeMarkers.size() - 1));
         return segmentTimeMarkers.get(index);
     }
 
-    private int getCurrentSplineIdxToTime(double time){
-        if (segmentTimeMarkers.isEmpty()) return 0;
-        int low = 0;
-        int high = segmentTimeMarkers.size()-1;
 
-        while (high - low > 1){
-            int mid = (low+high) / 2;
-            if (time >= segmentTimeMarkers.get(mid)){
-                low = mid;
-            } else {
-                high = mid;
-            }
-        }
-
-        return low;
-    }
-
-
+    /** Computes the interpolation ratio of a target time within a time interval. */
     private double getRatioBetweenTimes(double t1, double t2, double targetTime){
         return (targetTime-t1)/(t2-t1);
     }
+    /** Interpolates all path-point values between two samples. */
     private PathPoint lerpPathPoint(double ratio, PathPoint p1, PathPoint p2){
         PathPoint result = new PathPoint();
         result.time = lerp(p1.time, p2.time, ratio);
@@ -149,18 +145,34 @@ public class Sequence {
         return result;
     }
 
+    /**
+     * Gets the interpolated position at a sequence time.
+     * @param time sequence time in seconds
+     * @return position in inches and heading in degrees; times outside the path are clamped to an endpoint
+     */
     public Pos2D getPosition(double time){
         return getMovement(time).position;
     }
+    /**
+     * Gets the interpolated path state between the two nearest compiled points.
+     * The interpolation ratio is clamped, so times outside the path resolve to the first or last point.
+     * @param time sequence time in seconds
+     * @return interpolated pose, velocity, and time
+     */
     public PathPoint getMovement(double time){
         int[] closestIdx = getClosestIdxToTime(time);
         PathPoint p1 = compiledPath.get(closestIdx[0]);
         PathPoint p2 = compiledPath.get(closestIdx[1]);
         return lerpPathPoint(getRatioBetweenTimes(p1.time, p2.time, time), p1, p2);
     }
+    /**
+     * Gets the time of the final compiled path point.
+     * @return final path time in seconds
+     */
     public double getLastTime(){
         return compiledPath.get(compiledPath.size()-1).time;
     }
+    /** Interpolates between two scalar values using the supplied ratio. */
     private static double lerp(double start, double end, double x){
         double xInRange = x < 0.0 ? 0.0 : Math.min(1.0, x); // keep x in range of 0.0-1.0
         return start + (end-start) * xInRange;

@@ -28,12 +28,17 @@ public class DrivetrainTest {
 	/** Last raw power each fake motor was given, before any SDK clipping. */
 	private final Map<String, Double> powers = new HashMap<>();
 	private Drivetrain drivetrain;
-
+	/** Verifies that set up. */
 	@Before
 	public void setUp() {
 		final Map<String, DcMotor> motors = new HashMap<>();
 		// HardwareMap.get() reaches Android-only static initialisation, so serve the fake motors directly
 		HardwareMap hardwareMap = new HardwareMap(null, null) {
+			/**
+			 * Verifies that get.
+			 * @param classOrInterface SDK type requested by the hardware-map lookup
+			 * @param deviceName configured name of the fake motor
+			 */
 			@Override
 			@SuppressWarnings("unchecked")
 			public <T> T get(Class<? extends T> classOrInterface, String deviceName) {
@@ -62,7 +67,7 @@ public class DrivetrainTest {
 		}
 		drivetrain = new Drivetrain(hardwareMap, null, false);
 	}
-
+	/** Verifies that current powers. */
 	private double[] currentPowers() {
 		double[] result = new double[MOTOR_NAMES.length];
 		for (int i = 0; i < MOTOR_NAMES.length; i++) result[i] = powers.get(MOTOR_NAMES[i]);

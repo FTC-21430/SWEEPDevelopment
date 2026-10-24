@@ -16,25 +16,36 @@ import com.broombots.sweep.Classes.LocalizationPacket;
  * It handles the retrieval of the robot's position and orientation, as well as calculating velocities based on position changes over time.
  */
 public class GobildaLocalization implements Localization {
-    // variable location for stored pinpoint from hardware map
+    /** GoBilda Pinpoint device providing odometry and heading. */
     private final GoBildaPinpointDriver pinpoint;
-    private double lastRobotX, lastRobotY;
-
-    //    stored x and y and angle components
-    private double robotX, robotY; // in inches
-    private double robotAngle; // in degrees
-    // These are the current velocities of the robot, updates each iteration.
-    private double velocityX, velocityY;
+    /** Previous loop's robot x position in inches. */
+    private double lastRobotX;
+    /** Previous loop's robot y position in inches. */
+    private double lastRobotY;
+    /** Current robot x position in inches. */
+    private double robotX;
+    /** Current robot y position in inches. */
+    private double robotY;
+    /** Current robot heading in degrees. */
+    private double robotAngle;
+    /** Current robot x velocity in inches/second. */
+    private double velocityX;
+    /** Current robot y velocity in inches/second. */
+    private double velocityY;
+    /** Seconds elapsed since the previous velocity update. */
     private double time;
-    private Telemetry telemetry;
-    private ElapsedTime runtime;
+    /** Telemetry destination for velocity readings. */
+    private final Telemetry telemetry;
+    /** Timer used to measure elapsed loop time in seconds. */
+    private final ElapsedTime runtime;
 
     /**
-     * Constructor for this class.
-     * @param hardwareMap used to get the module from hardware map
-     * @param xPodOffset configures the pinpoint for how we have set it up to ensure current results -CM
-     * @param yPodOffset configures the pinpoint for how we have set it up to ensure current results -CM
-     * @param reset should we reset and recalibrate the sensor and its positions / angles? false for transition between auto and teleop to avoid transition error (non-fatal, just difference of value)
+     * Creates localization using the configured GoBilda Pinpoint and odometry pod offsets.
+     * @param hardwareMap hardware map used to retrieve the Pinpoint device
+     * @param telemetry telemetry destination for velocity readings
+     * @param xPodOffset x-axis pod offset in inches, based on the robot's measured pod mounting geometry
+     * @param yPodOffset y-axis pod offset in inches, based on the robot's measured pod mounting geometry
+     * @param reset whether to reset the stored pose and recalibrate the IMU
      */
     public GobildaLocalization(HardwareMap hardwareMap, Telemetry telemetry, double xPodOffset, double yPodOffset, boolean reset){
 
@@ -57,25 +68,24 @@ public class GobildaLocalization implements Localization {
     }
 
     /**
-     * Updates the robot's position, orientation, and velocities based on the current readings from the GoBilda Pinpoint Driver.
+     * Updates the robot's position, heading, and velocities from the GoBilda Pinpoint readings.
      */
     @Override
     public void update() {
-        // store the last iterations values so we can calculate the velocities!
-            lastRobotX= robotX;
-            lastRobotY = robotY;
+        // Retain the previous pose so the next velocity estimate uses this loop's displacement.
+        lastRobotX = robotX;
+        lastRobotY = robotY;
 
-            pinpoint.update();
-            Pose2D position =  pinpoint.getPosition();
-        //        Our frame of reference and the gobilda frame of reference is different, so you units needed to change.
-            robotX = position.getX(DistanceUnit.INCH);
-            robotY = position.getY(DistanceUnit.INCH);
-            robotAngle = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
-            updateVelocity();
+        pinpoint.update();
+        Pose2D position = pinpoint.getPosition();
+        robotX = position.getX(DistanceUnit.INCH);
+        robotY = position.getY(DistanceUnit.INCH);
+        robotAngle = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
+        updateVelocity();
     }
     /**
-     * Returns a LocalizationPacket containing the current position, orientation, and velocities of the robot.
-     * @return LocalizationPacket with current robot state
+     * Returns the current robot pose and velocity estimate.
+     * @return localization packet with positions in inches, heading in degrees, and velocities in inches/second
      */
     @Override
     public LocalizationPacket getLocalizationPacket() {
@@ -95,8 +105,8 @@ public class GobildaLocalization implements Localization {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, angle));
     }
     /**
-     * Returns the time between loop iterations - resets between calls!
-     * @return The time in seconds since the last call
+     * Measures and resets the elapsed time since the previous call.
+     * @return elapsed time in seconds
      */
     private double getDeltaTime(){
         time = runtime.seconds();
@@ -104,7 +114,7 @@ public class GobildaLocalization implements Localization {
         return time;
     }
     /**
-     * Updates the velocityX and velocityY variables based new robot variables. MUST CALL WITHIN updateOdometry()!
+     * Updates velocity estimates from the current and previous poses; called from {@link #update()}.
      */
     private void updateVelocity(){
         double dt = getDeltaTime();
@@ -113,6 +123,7 @@ public class GobildaLocalization implements Localization {
         telemetry.addData("velocityX", velocityX);
         telemetry.addData("velocityY", velocityY);
     }
+    /** Recalibrates the Pinpoint's inertial measurement unit. */
     public void calibrate(){
         pinpoint.recalibrateIMU();
     }

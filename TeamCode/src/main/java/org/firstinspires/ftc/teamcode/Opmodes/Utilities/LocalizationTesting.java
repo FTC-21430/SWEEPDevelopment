@@ -6,8 +6,13 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Robot.TemplateBot;
 
-@TeleOp
+/**
+ * Displays the robot's GoBilda localization readings for a driver-operated test.
+ * The driver can move the robot and observe X/Y position in inches and heading in degrees on telemetry.
+ */
+@TeleOp(name = "LocalizationTesting", group = "Utility-Testing")
 public class LocalizationTesting extends LinearOpMode {
+    /** Updates localization and reports its position and heading until the opmode stops. */
     @Override
     public void runOpMode() throws InterruptedException {
         TemplateBot robot = new TemplateBot(hardwareMap, telemetry);

@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
 import com.broombots.sweep.Classes.Pos2D;
-import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.broombots.sweep.Movement.SequenceInterpreter;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -12,22 +11,24 @@ import com.broombots.sweep.Classes.Subsystem;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Drivetrain;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.GobildaLocalization;
 
-import com.broombots.sweep.Classes.Coordinate;
 /**
- * This class represents a software testing robot that extends the SWEEPRobot class.
- * It contains subsystems and actions specific to the software testing robot.
+ * Robot configuration for the team's template FTC robot.
+ * It wires the drivetrain, GoBilda localization, movement parameters, and example actions into SWEEP.
  */
 public class TemplateBot extends SWEEPRobot {
-    // Robot subsystems
+    /** Drivetrain subsystem used for robot movement. */
     Drivetrain drivetrain;
+    /** GoBilda Pinpoint localization subsystem. */
     GobildaLocalization gobildaLocalization;
+    /** GoBilda Pinpoint y pod offset in inches; public static for live FTC Dashboard tuning. */
     public static double yOffset = 2.78;
+    /** GoBilda Pinpoint x pod offset in inches; public static for live FTC Dashboard tuning. */
     public static double xOffset = 4.9574;
     /**
-     * Constructor for the SoftwareTestingBot class.
-     * Initializes the robot's subsystems and takes FIRSTSDK bits
-     * @param hardwareMap The hardware map used to access the robot's hardware components.
-     * @param telemetry   The telemetry object used for sending data to the driver station.
+     * Creates the template robot and its hardware-backed subsystems.
+     * Localization is assigned to the inherited field in {@link #initialize()} after it is constructed.
+     * @param hardwareMap hardware map used to access robot hardware
+     * @param telemetry telemetry destination for the driver station
      */
     public TemplateBot(HardwareMap hardwareMap, Telemetry telemetry){
         this.telemetry = telemetry;
@@ -43,8 +44,8 @@ public class TemplateBot extends SWEEPRobot {
         gobildaLocalization.calibrate();
     }
     /**
-     * Initializes the robot's subsystems and sets up any necessary configurations.
-     * This method is called once when the robot is initialized.
+     * Initializes the drivetrain and makes the constructed localization subsystem active.
+     * This method is called once after construction and before the opmode starts.
      */
     @Override
     public void initialize() {
@@ -53,8 +54,7 @@ public class TemplateBot extends SWEEPRobot {
         localization.overrideLocalization(0,0,0);
     }
     /**
-     * Updates the robot's subsystems and actions during teleop mode.
-     * This method is called repeatedly during the teleop period.
+     * Updates drivetrain and actions during teleop, then flushes telemetry.
      */
     @Override
     public void teleopUpdate() {
@@ -63,8 +63,7 @@ public class TemplateBot extends SWEEPRobot {
         telemetry.update();
     }
     /**
-     * Updates the robot's subsystems and actions during autonomous mode.
-     * This method is called repeatedly during the autonomous period.
+     * Updates localization, autonomous movement, drivetrain, and telemetry for one loop.
      */
     @Override
     public void autonomousUpdate() {
@@ -83,26 +82,28 @@ public class TemplateBot extends SWEEPRobot {
         telemetry.update();
     }
 
-    // Subsystem getters
+    /**
+     * Returns the robot's drivetrain subsystem.
+     * @return configured drivetrain
+     */
     public Drivetrain getDrivetrain() {
         return drivetrain;
     }
-    // Robot action definitions
     /**
-     * Creates an ExampleAction to demonstrate how actions should be defined
-     * @param position The coordinate around which the action is triggered.
-     * @param time       The duration for which the action runs (in seconds).
-     * @param range      The trigger radius for the action (in inches).
-     * @param waitTime   The path time (in seconds) that must pass before the action can trigger.
-     * @return An instance of ExampleAction.
+     * Creates an example action with explicit trigger and timing parameters.
+     * @param position trigger center in inches
+     * @param time action duration in seconds
+     * @param range trigger radius in inches
+     * @param waitTime minimum elapsed path time before triggering, in seconds
+     * @return configured example action
      */
     public ExampleAction exampleAction(Pos2D position, double time, double range, double waitTime){
         return new ExampleAction(this, position, time, range, waitTime);
     }
 
     /**
-     * Simplified example action which used default parameters
-     * @return new exampleAction
+     * Creates an example action using the robot's default trigger settings.
+     * @return configured example action
      */
     public ExampleAction exampleAction(){
         return new ExampleAction(this, null, getDefaultActionTime(), getDefaultActionRange(), 0);

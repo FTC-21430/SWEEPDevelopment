@@ -6,7 +6,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests construction and coordinate/speed behavior of {@link SplineWaypoint}.
+ */
 public class SplineWaypointTest {
+	/** Verifies that constructor preserves coordinate and speed. */
 	@Test
 	public void constructorPreservesCoordinateAndSpeed() {
 		SplineWaypoint waypoint = new SplineWaypoint(2.0, 4.0, 0.75);
@@ -17,7 +21,7 @@ public class SplineWaypointTest {
 		assertEquals(0.75, waypoint.getSpeed(), 1e-9);
 		assertEquals(Waypoint.WaypointType.SPLINE, waypoint.getType());
 	}
-
+	/** Verifies that coordinate constructor rejects null. */
 	@Test
 	public void coordinateConstructorRejectsNull() {
 		try {

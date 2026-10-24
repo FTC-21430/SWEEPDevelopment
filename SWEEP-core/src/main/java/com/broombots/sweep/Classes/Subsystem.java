@@ -1,14 +1,11 @@
 package com.broombots.sweep.Classes;
 
-/**
- * Subsystem interface, which is implemented by all subsystems in the robot.
- * Each subsystem must implement the update() method,
- * which is called every loop to update the subsystem's state, and the setDisabled(boolean disable) method,
- * which is called when the robot is disabled to stop all motors and reset any state.
- */
+/** Defines a robot subsystem's periodic update and disabled-state behavior. */
 public interface Subsystem {
-    // Standard update method that all subsystems should implement
+    /** Updates this subsystem once during the robot's control loop. */
     public void update();
-    // Method to disable the subsystem, stopping all motors and resetting any state, ensure that it will immediately stop all motors and reset any state when called
+    /** Applies or clears disabled state; disabling must immediately stop motors and reset relevant state.
+     * @param disable {@code true} to disable the subsystem, {@code false} to enable it
+     */
     public void setDisabled(boolean disable);
 }

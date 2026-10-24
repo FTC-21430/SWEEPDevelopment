@@ -1,25 +1,16 @@
 package com.broombots.sweep.Classes;
 
-/**
- * Immutable data packet representing a single localization sample.
- *
- * <p>Holds the robot pose (x, y, yaw) in field coordinates and the
- * corresponding velocity components in the field frame (velX, velY).
- * Instances are immutable and intended to be a lightweight transport
- * object for telemetry, logging, or motion calculations.</p>
- */
-@SuppressWarnings("unused") // prevent method unused warnings from cramping my style :)
+/** Immutable sample of robot pose and field-frame translational velocity. */
+@SuppressWarnings("unused")
 public class LocalizationPacket {
-    // The robot pose and velocity in field coordinates.
+    /** Field x and y position in inches, heading yaw in degrees, and field-frame velocities in inches per second. */
     private final double x,y,yaw,velX,velY;
-    /**
-     * Construct a new LocalizationPacket.
-     *
-     * @param x field X position (units are caller-defined, e.g. meters)
-     * @param y field Y position (same units as x)
-     * @param yaw robot heading (typically in radians; must be consistent across code)
-     * @param velocityX velocity along the field X axis (units/time, e.g. inches/second)
-     * @param velocityY velocity along the field Y axis (units/time, e.g. inches/second)
+    /** Creates a localization sample using SWEEP's field units.
+     * @param x field X position in inches
+     * @param y field Y position in inches
+     * @param yaw robot heading in degrees
+     * @param velocityX velocity along the field X axis in inches per second
+     * @param velocityY velocity along the field Y axis in inches per second
      */
     public LocalizationPacket(double x, double y, double yaw, double velocityX, double velocityY){
        this.x = x;
@@ -27,43 +18,35 @@ public class LocalizationPacket {
        this.yaw = yaw;
        this.velX = velocityX;
        this.velY = velocityY;
-   
+
     }
-    /**
-     * Returns the X position in field coordinates.
-     * @return the field X position
-     */
+    /** Returns the field X position.
+     * @return X position in inches */
     public double getX() {
         return x;
     }
-    /**
-     * Returns the Y position in field coordinates.
-     * @return the field Y position
-     */
+    /** Returns the field Y position.
+     * @return Y position in inches */
     public double getY() {
         return y;
     }
-    /**
-     * Returns the robot heading (yaw).
-     * @return the yaw/heading (in degrees)
-     */
+    /** Returns the robot heading.
+     * @return yaw in degrees */
     public double getYaw() {
         return yaw;
     }
-    /**
-     * Returns the velocity along the field X axis.
-     * @return velocity in the X direction
-     */
+    /** Returns the field-frame velocity along X.
+     * @return X velocity in inches per second */
     public double getVelX() {
         return velX;
     }
-    /**
-     * Returns the velocity along the field Y axis.
-     * @return velocity in the Y direction
-     */
+    /** Returns the field-frame velocity along Y.
+     * @return Y velocity in inches per second */
     public double getVelY() {
         return velY;
     }
+    /** Converts the pose components to a {@link Pos2D}.
+     * @return position and heading, in inches and degrees */
     public Pos2D getCoordinate(){
         return new Pos2D(x,y,yaw);
     }

@@ -11,16 +11,18 @@ import com.broombots.sweep.Movement.SequenceInterpreter;
  * as well as default action ranges and times for triggering actions during autonomous operation.
  */
 public abstract class SWEEPRobot extends Robot {
+    /** Localization source; public so SDK-style robot classes can assign their hardware-backed implementation. */
     public Localization localization;
+    /** Movement limits and gains, public so robot subclasses can replace or tune the defaults. */
     public RobotMovementParameters robotMovementParameters = new DefaultRobotMovementParameters();
+    /** Sequence executor; public so robot subclasses can initialize it with their drive controller. */
     public SequenceInterpreter sequenceInterpreter;
-    // Default range and time for actions to be triggered during autonomous operation
-    private double defaultActionRange = 6; // Default range for actions to be triggered
-    private double defaultActionTime = 0; // Default time for actions to be triggered
+    /** Default distance tolerance for autonomous action triggers, in inches. */
+    private double defaultActionRange = 6;
+    /** Default elapsed sequence path time before autonomous actions may trigger, in seconds. */
+    private double defaultActionTime = 0;
 
-    /**
-     * This method is called during the autonomous phase of the robot's operation.
-     */
+    /** Updates actions, localization, and the active autonomous sequence. */
     @Override
     public void autonomousUpdate(){
         updateActions();
@@ -28,10 +30,7 @@ public abstract class SWEEPRobot extends Robot {
         if (sequenceInterpreter.hasActiveSequence()){
             sequenceInterpreter.update(localization.getLocalizationPacket());
         }
-        // specific drivetrain update.... use in override
-
-        //Localization update
-        //Other sweep logic
+        // Subclasses are responsible for updating their drivetrain here.
 
         telemetry.update();
     }
@@ -50,16 +49,14 @@ public abstract class SWEEPRobot extends Robot {
     public void addToCurrentSequence(SequenceBuilder sequenceBuilder){
         sequenceInterpreter.addToCurrentSequence(sequenceBuilder);
     }
-    /**
-     * Gets the default range for actions to be triggered during autonomous operation.
-     * @return the default action range
+    /** Gets the default autonomous action trigger distance.
+     * @return default distance in inches
      */
     public double getDefaultActionRange() {
         return defaultActionRange;
     }
-    /**
-     * Gets the default time for actions to be triggered during autonomous operation.
-     * @return the default action time
+    /** Gets the default autonomous action path-time gate.
+     * @return default elapsed sequence path time in seconds
      */
     public double getDefaultActionTime() {
         return defaultActionTime;

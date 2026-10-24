@@ -6,11 +6,18 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.broombots.sweep.Classes.SWEEPRobot;
 
 /**
- * Abstract class designed for creating new autonomous routes with SWEEP
+ * Base linear opmode for defining and running SWEEP autonomous routes.
+ * Subclasses assign a sequence and robot in {@link #defineRoute()}.
  */
 public abstract class SWEEPRoute extends LinearOpMode {
+    /** Route sequence, public so subclasses can assign it and the base opmode can execute it. */
     public Sequence sequence;
+    /** Robot executing the route, public so subclasses can assign it and the base opmode can initialize it. */
     public SWEEPRobot robot;
+    /**
+     * Runs the route lifecycle: defineRoute, initialize, wait for start, set the sequence, then update autonomously.
+     * @throws InterruptedException if the opmode thread is interrupted while waiting for start
+     */
     @Override
     public void runOpMode() throws InterruptedException {
         defineRoute();
@@ -24,8 +31,8 @@ public abstract class SWEEPRoute extends LinearOpMode {
         }
     }
     /**
-     * This method should be overridden in subclasses to define the specific route for the robot.
-     * The route should be defined using the PathBuilder class and assigned to the 'path' variable.
+     * Defines the route sequence and assigns the robot that will execute it.
+     * Subclasses should build the route with {@code SequenceBuilder} and assign the result to {@link #sequence}.
      */
     public void defineRoute() {
         robot = null;

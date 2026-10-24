@@ -1,23 +1,16 @@
 package com.broombots.sweep.Classes;
-/**
- * Interface for localization systems. This interface defines the methods that any localization system must implement.
- * Localization systems are responsible for tracking the robot's position and orientation on the field.
- */
+
+/** Provides the robot's current field pose to SWEEP path following and control. */
 public interface Localization {
-    /**
-     * updates the localization data
-     */
+    /** Updates the localization estimate; subsequent packet reads must reflect the refreshed estimate. */
     public void update();
-    /**
-     * Retrieves the current localization data.
-     * @return A LocalizationPacket containing the robot's current position and orientation.
-     */
+    /** Returns the latest localization sample.
+     * @return current robot pose and field-frame velocity; position is inches, heading degrees, linear velocity inches per second */
     public LocalizationPacket getLocalizationPacket();
-    /**
-     * Overrides the current localization data with the specified values.
-     * @param x     X position, in inches
-     * @param y     Y position, in inches
-     * @param angle Heading angle, in degrees
+    /** Replaces the current estimated pose with the supplied field coordinates.
+     * @param x field x position in inches
+     * @param y field y position in inches
+     * @param angle field heading in degrees
      */
     public void overrideLocalization(double x, double y, double angle);
 }

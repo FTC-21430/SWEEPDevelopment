@@ -11,6 +11,7 @@ import static org.junit.Assert.fail;
 
 /** Tests for appending movement to the sequence a SequenceInterpreter is running. */
 public class AddToCurrentSequenceTest {
+	/** Verifies that builder. */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(new DefaultRobotMovementParameters()).setSampleRate(0.005);
 	}
@@ -30,7 +31,7 @@ public class AddToCurrentSequenceTest {
 
 		assertTrue("appended sequence was ignored", interpreter.hasActiveSequence());
 	}
-
+	/** Verifies that adding without an active sequence fails loudly. */
 	@Test
 	public void addingWithoutAnActiveSequenceFailsLoudly() {
 		SequenceInterpreter interpreter = new SequenceInterpreter(new DefaultRobotMovementParameters());

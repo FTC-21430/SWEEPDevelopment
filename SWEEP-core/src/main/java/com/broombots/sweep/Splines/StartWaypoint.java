@@ -4,8 +4,8 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A path anchor waypoint that defines a target pose and movement mode for path generation.
- * This variant marks the robot's starting pose before any generated segment begins.
+ * A start waypoint that marks the robot's initial pose before any generated segment begins.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#start(double, double, double)}.
  */
 public class StartWaypoint implements Waypoint {
 	/**
@@ -28,6 +28,7 @@ public class StartWaypoint implements Waypoint {
 	 * Creates a start waypoint from an existing coordinate.
 	 *
 	 * @param coordinate target pose for this waypoint
+	 * @throws IllegalArgumentException if coordinate is null
 	 */
 	public StartWaypoint(Pos2D coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
@@ -35,6 +36,8 @@ public class StartWaypoint implements Waypoint {
 	}
 
 	/**
+	 * Gets the target pose, with position in inches and heading in degrees.
+	 *
 	 * @return target pose for this waypoint
 	 */
 	@Override

@@ -11,17 +11,24 @@ import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Compares generated paths with ideal spline geometry and requested waypoint poses.
+ * Geometric fidelity matters because tracking accuracy depends on the planned route matching its intended curve.
+ */
 public class SequenceGeometryTest {
 	/** Required agreement between the generated path and the ideal spline, in inches. */
 	private static final double TOLERANCE = 1e-3;
 
+	/** Reference spline control points, in x/y inches. */
 	private static final double[][] CURVE = {{-30, -40}, {-10, -10}, {20, 0}, {40, 30}, {30, 50}};
 
+	/** @return the shared curved route in inches and degrees */
 	private static Sequence curvedSequence() {
 		return PathTestSupport.build(new DefaultRobotMovementParameters(),
 				-30, -40, 0, -10, -10, 20, 0, 40, 30, 30, 50, 90);
 	}
 
+	/** The 1e-3-inch bound limits deviation between generated samples and a densely sampled ideal spline. */
 	@Test
 	public void everySampledPositionLiesOnTheIdealSpline() {
 		Sequence sequence = curvedSequence();
@@ -33,7 +40,7 @@ public class SequenceGeometryTest {
 					error <= TOLERANCE);
 		}
 	}
-
+	/** Verifies that path passes through every waypoint. */
 	@Test
 	public void pathPassesThroughEveryWaypoint() {
 		Sequence sequence = curvedSequence();
@@ -48,7 +55,7 @@ public class SequenceGeometryTest {
 			assertTrue("Missed waypoint " + waypoint[0] + "," + waypoint[1] + " by " + closest, closest <= TOLERANCE);
 		}
 	}
-
+	/** Verifies that path starts and ends at the requested pose. */
 	@Test
 	public void pathStartsAndEndsAtTheRequestedPose() {
 		Sequence sequence = curvedSequence();
@@ -63,7 +70,7 @@ public class SequenceGeometryTest {
 		assertEquals(50, end.position.y, TOLERANCE);
 		assertEquals(90, end.position.angle, TOLERANCE);
 	}
-
+	/** Verifies that collinear waypoints produce astraight line. */
 	@Test
 	public void collinearWaypointsProduceAStraightLine() {
 		Sequence sequence = PathTestSupport.build(new DefaultRobotMovementParameters(),
@@ -77,7 +84,7 @@ public class SequenceGeometryTest {
 		}
 		assertEquals(72, lastX, TOLERANCE);
 	}
-
+	/** Verifies that diagonal line stays on the line between its endpoints. */
 	@Test
 	public void diagonalLineStaysOnTheLineBetweenItsEndpoints() {
 		Sequence sequence = PathTestSupport.build(new DefaultRobotMovementParameters(),
@@ -87,7 +94,7 @@ public class SequenceGeometryTest {
 			assertEquals(point.position.x, point.position.y, TOLERANCE * Math.sqrt(2));
 		}
 	}
-
+	/** Verifies that finer sample rate does not change the geometry. */
 	@Test
 	public void finerSampleRateDoesNotChangeTheGeometry() {
 		Sequence fine = new SequenceBuilder(new DefaultRobotMovementParameters()).setSampleRate(0.0005)

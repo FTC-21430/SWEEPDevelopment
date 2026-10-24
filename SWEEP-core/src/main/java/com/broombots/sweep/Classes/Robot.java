@@ -12,22 +12,22 @@ import java.util.ArrayList;
  * including subsystems, actions, and telemetry.
  */
 public abstract class Robot {
-    // The telemetry object for sending data to the driver station (debug information)
+    /** Driver Station telemetry; public so SDK-style robot classes can assign the SDK-provided instance. */
     public Telemetry telemetry;
-    // An array of subsystems that make up the robot
+    /** Robot subsystems; public so robot subclasses can assign their subsystem collection. */
     public Subsystem[] subsystems;
-    // The runtime timer for tracking the duration of the match
+    /** Match runtime timer in seconds; public so SDK-style robot classes can assign the SDK-provided timer. */
     public ElapsedTime runtime;
-    // The alliance that the robot is currently on (RED or BLUE)
+    /** Current alliance; package-visible for robot implementations in this package. */
     Alliance alliance = Alliance.RED;
-    // A list of actions that are currently active, list functionality is for teleop,
-    // to store driver inputs that were given while an action was running.
+    /** Active actions; package-visible for package-level robot lifecycle tests. */
     ArrayList<Action> activeActions = new ArrayList<>();
-    /**
-     * An Enum for the two different alliances that the robot could be a part of
-     */
+    /** Alliance choices returned by the protected alliance accessors. */
     enum Alliance {
-        RED, BLUE
+        /** Red alliance. */
+        RED,
+        /** Blue alliance. */
+        BLUE
     }
 
     /**
@@ -38,51 +38,39 @@ public abstract class Robot {
 
     }
 
-    /**
-     * Resets game timer
-     */
+    /** Resets the match runtime timer. */
     public void startMatch(){
         runtime.reset();
     }
 
-    /**
-     * @return the alliance the robot has been set to
+    /** Returns the alliance assigned to this robot.
+     * @return current alliance
      */
     protected Alliance getAlliance(){
         return this.alliance;
     }
 
-    /**
-     * Sets the alliance for the robot
-     * @param alliance alliance
+    /** Sets the alliance for the robot.
+     * @param alliance alliance to assign
      */
     protected void setAlliance(Alliance alliance){
         this.alliance = alliance;
     }
 
-    /**
-     * Updates the robot during the autonomous period.
-     * This method should be overridden by subclasses to provide specific autonomous logic for the robot.
-     */
+    /** Updates the robot during autonomous operation; override to provide robot-specific autonomous behavior. */
     public void autonomousUpdate(){
-        telemetry.addLine("Teleop In progress, Override the teleopUpdate method in robot to change something!");
+        telemetry.addLine("Autonomous in progress, override autonomousUpdate() in your robot to customize it.");
         updateActions();
         telemetry.update();
     }
-    /**
-     * Updates the robot during the teleop period.
-     * This method should be overridden by subclasses to provide specific teleop logic for the robot.
-     */
+    /** Updates the robot during teleop operation; override to provide robot-specific driver-controlled behavior. */
     public void teleopUpdate(){
-        telemetry.addLine("Autonomous In progress, Override the teleopUpdate method in robot to change something!");
+        telemetry.addLine("Teleop in progress, override teleopUpdate() in your robot to customize it.");
         updateActions();
         telemetry.update();
     }
 
-    /**
-     * Stops all subsystems and displays an emergency stop message on the telemetry.
-     * Ensure that all subsystems have their disabled functions implemented properly.
-     */
+    /** Disables every subsystem and reports an emergency-stop message through telemetry. */
     protected void emergencyStop(){
         for (Subsystem subsystem : subsystems){
             subsystem.setDisabled(true);
@@ -90,24 +78,19 @@ public abstract class Robot {
         telemetry.addLine("--ROBOT EMERGENCY STOPPED, RE INIT TO CONTINUE--");
         telemetry.update();
     }
-    /**
-     * Returns the current game time in seconds since the match started.
-     * @return game time
+    /** Returns elapsed match time.
+     * @return game time in seconds since {@link #startMatch()}
      */
     public double getGameTime(){
         return runtime.seconds();
     }
-    /**
-     * Returns all subsystems of the robot.
-     * @return array of subsystems
+    /** Returns all subsystems assigned to this robot.
+     * @return robot subsystems
      */
     protected Subsystem[] getAllSubsystems(){
         return subsystems;
     }
-    /**
-     * Updates all active actions. This method should be called in the main update loop of the robot.
-     * It processes each active action, checks for completion, and removes completed actions from the active list.
-     */
+    /** Processes active actions, finishes completed ones, and removes them from the active list. */
     protected void updateActions(){
         // Iterate a snapshot because process() and end() may start new actions, which modifies activeActions
         for (Action action : new ArrayList<>(activeActions)){
@@ -139,9 +122,8 @@ public abstract class Robot {
         if (action.hasEnded()) activeActions.remove(action);
         return true;
     }
-    /**
-     * Runs a given action. This method should be called to start an action and add it to the list of active actions.
-     * @param action the action to be executed
+    /** Starts a non-null action and adds it to the active list.
+     * @param action action to execute
      */
     public void runAction(Action action){
         if (action == null) return;

@@ -4,8 +4,8 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A path anchor waypoint that defines a target pose and movement mode for path generation.
- * This variant pauses execution at the target pose for a configured duration.
+ * A wait waypoint that pauses at its target pose for a configured duration in seconds.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#waitAt(double)}.
  */
 public class WaitWaypoint implements Waypoint {
 	/**
@@ -35,6 +35,7 @@ public class WaitWaypoint implements Waypoint {
 	 *
 	 * @param coordinate target pose for this waypoint
 	 * @param duration hold duration in seconds
+	 * @throws IllegalArgumentException if coordinate is null
 	 */
 	public WaitWaypoint(Pos2D coordinate, double duration) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
@@ -44,6 +45,8 @@ public class WaitWaypoint implements Waypoint {
 	}
 
 	/**
+	 * Gets the target pose, with position in inches and heading in degrees.
+	 *
 	 * @return target pose for this waypoint
 	 */
 	@Override

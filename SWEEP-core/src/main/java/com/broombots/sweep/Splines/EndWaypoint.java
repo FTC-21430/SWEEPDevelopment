@@ -4,8 +4,9 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A path anchor waypoint that defines a target pose and movement mode for path generation.
- * This variant marks the terminal pose and speed target for path completion.
+ * An end waypoint that marks the terminal pose of a path.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#end(double, double, double)}; its speed value is
+ * 1.0 so the profile can decelerate to a stop at the endpoint.
  */
 public class EndWaypoint implements Waypoint {
 	/**
@@ -25,7 +26,8 @@ public class EndWaypoint implements Waypoint {
 
 	/**
 	 * Creates an end waypoint from an existing coordinate.
-	 * @param coordinate target pose for this waypoint
+	 * @param coordinate target pose for this waypoint, with position in inches and heading in degrees
+	 * @throws IllegalArgumentException if coordinate is null
 	 */
 	public EndWaypoint(Pos2D coordinate) {
 		if (coordinate == null) throw new IllegalArgumentException("coordinate cannot be null");
@@ -51,6 +53,8 @@ public class EndWaypoint implements Waypoint {
 	}
 
 	/**
+	 * Gets the target pose, with position in inches and heading in degrees.
+	 *
 	 * @return target pose for this waypoint
 	 */
 	@Override

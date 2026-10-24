@@ -10,20 +10,31 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/** Switching to a new path part way through one, starting from the pose and velocity at that moment. */
+/**
+ * Checks that a replacement path starts from the current pose and velocity of a path already in progress.
+ * Preserving that handoff helps avoid a discontinuity in motion during path following.
+ */
 public class SequenceMidPathSwitchTest {
+	/** Position, velocity, and timing comparison tolerance; units follow each asserted value. */
 	private static final double EPS = 1e-3;
+	/** Shared movement limits for both the original and replacement routes. */
 	private static final RobotMovementParameters PARAMS = new DefaultRobotMovementParameters();
 
+	/** @return builder configured with shared movement limits and path sampling step */
 	private static SequenceBuilder builder() {
 		return new SequenceBuilder(PARAMS).setSampleRate(PathTestSupport.BUILD_SAMPLE_RATE);
 	}
 
+	/** @return test route along the x axis, with positions in inches and headings in degrees */
 	private static Sequence straightRun() {
 		return builder().start(0, 0, 0).splineTo(30, 0, 1).end(60, 0, 0).build();
 	}
 
-	/** Time at which the straight run is at its fastest, so the handoff velocity is clearly non zero. */
+	/**
+	 * Finds an approximate time of peak speed so the handoff has clear nonzero velocity.
+	 * @param sequence straight route to inspect
+	 * @return approximate peak-speed time in seconds
+	 */
 	private static double fastestTime(Sequence sequence) {
 		double bestTime = 0;
 		double bestSpeed = -1;
@@ -37,18 +48,27 @@ public class SequenceMidPathSwitchTest {
 		return bestTime;
 	}
 
+	/**
+	 * Creates a replacement route from the old route's pose and velocity at handoff.
+	 * @param running route being replaced
+	 * @param time handoff time in seconds
+	 * @param endX new endpoint x coordinate in inches
+	 * @param endY new endpoint y coordinate in inches
+	 * @return replacement sequence
+	 */
 	private static Sequence switchAt(Sequence running, double time, double endX, double endY) {
 		PathPoint handoff = running.getMovement(time);
 		return builder().start(handoff).end(endX, endY, 0).build();
 	}
 
+	/** A speed above 10 inches per second confirms the selected handoff is meaningfully in motion. */
 	@Test
 	public void handoffMoment_hasRealVelocity() {
 		Sequence running = straightRun();
 
 		assertTrue(PathTestSupport.speed(running.getMovement(fastestTime(running))) > 10);
 	}
-
+	/** Verifies that new path starts where the old one was. */
 	@Test
 	public void newPathStartsWhereTheOldOneWas() {
 		Sequence running = straightRun();
@@ -61,7 +81,7 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(expected.x, start.x, EPS);
 		assertEquals(expected.y, start.y, EPS);
 	}
-
+	/** Verifies that new path runs on its own clock from zero. */
 	@Test
 	public void newPathRunsOnItsOwnClockFromZero() {
 		Sequence running = straightRun();
@@ -73,7 +93,7 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(0, switched.getMovement(0).time, EPS);
 		assertTrue(switched.getLastTime() > 0);
 	}
-
+	/** Verifies that new path starts with the velocity the robot had. */
 	@Test
 	public void newPathStartsWithTheVelocityTheRobotHad() {
 		Sequence running = straightRun();
@@ -87,6 +107,7 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(velocity.y, start.y, 0.5);
 	}
 
+	/** The 0.3-second probe checks how inherited forward velocity shapes the initial curve. */
 	@Test
 	public void newPathKeepsMovingInTheOldDirectionBeforeTurning() {
 		Sequence running = straightRun();
@@ -105,7 +126,7 @@ public class SequenceMidPathSwitchTest {
 		assertTrue("Moving handoff should have travelled further in x than one from rest",
 				moving.getMovement(probe).position.x > fromRest.getMovement(probe).position.x + 0.1);
 	}
-
+	/** Verifies that target straight ahead is not overshot by much more than braking requires. */
 	@Test
 	public void targetStraightAheadIsNotOvershotByMuchMoreThanBrakingRequires() {
 		Sequence running = straightRun();
@@ -120,7 +141,7 @@ public class SequenceMidPathSwitchTest {
 		}
 		assertTrue("Path ran to x=" + furthest + " for a target at x=" + targetX, furthest <= targetX + 5);
 	}
-
+	/** Verifies that switched path stays finite and reaches its new target. */
 	@Test
 	public void switchedPathStaysFiniteAndReachesItsNewTarget() {
 		Sequence running = straightRun();
@@ -133,7 +154,7 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(40, end.position.x, EPS);
 		assertEquals(30, end.position.y, EPS);
 	}
-
+	/** Verifies that switching does not change the original path. */
 	@Test
 	public void switchingDoesNotChangeTheOriginalPath() {
 		Sequence running = straightRun();
@@ -146,7 +167,7 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(lastBefore, running.getLastTime(), EPS);
 		assertEquals(before.x, running.getMovement(time).position.x, EPS);
 	}
-
+	/** Verifies that switching after the run has stopped still builds. */
 	@Test
 	public void switchingAfterTheRunHasStoppedStillBuilds() {
 		Sequence running = straightRun();
@@ -158,6 +179,11 @@ public class SequenceMidPathSwitchTest {
 		assertEquals(80, switched.getMovement(switched.getLastTime()).position.x, EPS);
 	}
 
+	/**
+	 * Creates a start point moving along positive x.
+	 * @param speed initial speed in inches per second
+	 * @return moving start point at the origin
+	 */
 	private static PathPoint movingStart(double speed) {
 		PathPoint point = new PathPoint();
 		point.position = new Pos2D(0, 0, 0);
@@ -165,10 +191,20 @@ public class SequenceMidPathSwitchTest {
 		return point;
 	}
 
+	/**
+	 * Computes ideal stopping distance under the configured translational acceleration.
+	 * @param speed initial speed in inches per second
+	 * @return braking distance in inches
+	 */
 	private static double brakingDistance(double speed) {
 		return speed * speed / (2 * PARAMS.getMaxStableAcceleration(0));
 	}
 
+	/**
+	 * Finds the furthest x coordinate reached by sampled points.
+	 * @param sequence path to inspect
+	 * @return maximum x coordinate in inches
+	 */
 	private static double furthestX(Sequence sequence) {
 		double furthest = -Double.MAX_VALUE;
 		for (PathPoint point : PathTestSupport.sample(sequence, 0.01)) {
@@ -176,7 +212,7 @@ public class SequenceMidPathSwitchTest {
 		}
 		return furthest;
 	}
-
+	/** Verifies that starting at rest ignores the velocity handle. */
 	@Test
 	public void startingAtRestIgnoresTheVelocityHandle() {
 		Sequence fresh = builder().start(0, 0, 0).end(40, 0, 0).build();
@@ -184,7 +220,7 @@ public class SequenceMidPathSwitchTest {
 
 		assertEquals(fresh.getLastTime(), fromRest.getLastTime(), EPS);
 	}
-
+	/** Verifies that target beyond the braking distance is reached without overshoot. */
 	@Test
 	public void targetBeyondTheBrakingDistanceIsReachedWithoutOvershoot() {
 		double speed = 40;
@@ -195,7 +231,7 @@ public class SequenceMidPathSwitchTest {
 		assertTrue("Ran to x=" + furthestX(switched) + " for target " + target, furthestX(switched) <= target + 1);
 		assertEquals(target, switched.getMovement(switched.getLastTime()).position.x, EPS);
 	}
-
+	/** Verifies that target closer than the braking distance still builds and ends on target. */
 	@Test
 	public void targetCloserThanTheBrakingDistanceStillBuildsAndEndsOnTarget() {
 		// Accepted limitation: the speed profile does not carry the start speed forward, so for a target this close it
@@ -208,7 +244,7 @@ public class SequenceMidPathSwitchTest {
 		PathTestSupport.assertFinitePoseAndVelocity(switched);
 		assertEquals(target, switched.getMovement(switched.getLastTime()).position.x, EPS);
 	}
-
+	/** Verifies that target behind the robot is still reached. */
 	@Test
 	public void targetBehindTheRobotIsStillReached() {
 		Sequence switched = builder().start(movingStart(40)).end(-30, 0, 0).build();
@@ -216,7 +252,7 @@ public class SequenceMidPathSwitchTest {
 		PathTestSupport.assertFinitePoseAndVelocity(switched);
 		assertEquals(-30, switched.getMovement(switched.getLastTime()).position.x, EPS);
 	}
-
+	/** Verifies that faster start carries further along its heading before turning. */
 	@Test
 	public void fasterStartCarriesFurtherAlongItsHeadingBeforeTurning() {
 		double slowY = builder().start(movingStart(10)).end(0, 60, 0).build().getMovement(0.5).position.x;
@@ -224,7 +260,7 @@ public class SequenceMidPathSwitchTest {
 
 		assertTrue("Fast start x=" + fastX + " should exceed slow start x=" + slowY, fastX > slowY);
 	}
-
+	/** Verifies that starting velocity direction is respected for sideways motion. */
 	@Test
 	public void startingVelocityDirectionIsRespectedForSidewaysMotion() {
 		PathPoint sideways = new PathPoint();

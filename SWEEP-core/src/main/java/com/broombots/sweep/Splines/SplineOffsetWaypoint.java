@@ -4,8 +4,9 @@ import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Classes.Waypoint;
 
 /**
- * A spline waypoint whose heading follows the direction of travel plus a constant offset.
- * The curve is the same as for a {@link SplineWaypoint}; an offset of 180 degrees drives the robot backwards.
+ * A spline waypoint whose heading follows the direction of travel plus a constant offset in degrees.
+ * It is created by {@link com.broombots.sweep.Builder.SequenceBuilder#splineToOffset(double, double, double, double)}
+ * or {@link com.broombots.sweep.Builder.SequenceBuilder#splineToBackwards(double, double, double)}; 180 degrees drives backwards.
  */
 public class SplineOffsetWaypoint implements Waypoint {
 	/** Segment speed scale in the range [0, 1] relative to robot top speed. */

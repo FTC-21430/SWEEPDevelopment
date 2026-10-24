@@ -21,18 +21,19 @@ public class ActionFinishOnceTest {
 	private static class CountingAction extends SWEEPAction {
 		int endCount = 0;
 
+		/** Creates an immediately-completing action that counts end callbacks. */
 		CountingAction() {
 			super(new TestRobot(), new Pos2D(0, 0, 0), 0, 1, 0);
 		}
-
+		/** Executes the simulated action. */
 		@Override
 		public void execute() {
 		}
-
+		/** Runs one simulated action update. */
 		@Override
 		public void process() {
 		}
-
+		/** Ends the simulated action. */
 		@Override
 		public void end() {
 			endCount++;

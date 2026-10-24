@@ -5,7 +5,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+/** Tests building a linear interpolation function from added points. */
 public class LerpFunctionBuilderTest {
+	/** Verifies that build creates function from added points. */
 	@Test
 	public void buildCreatesFunctionFromAddedPoints() {
 		LerpFunction function = new LerpFunctionBuilder()
