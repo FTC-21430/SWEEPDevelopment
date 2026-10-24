@@ -198,7 +198,7 @@ public class PathProcessor {
         // Seed the final sample with the requested terminal speed along the last segment's travel direction.
         // The backward pass then propagates the braking constraint to earlier samples.
         double endAngle = Pos2D.getMovementDirectionRad(path.get(path.size() - 1).position, endPoint.position);
-        double terminalSpeed = movementParameters.getMaxVelocity(Math.toRadians(endAngle)) * Math.max(0.0, Math.min(1.0, endingSpeedRatio));
+        double terminalSpeed = movementParameters.getMaxVelocity(Math.toDegrees(endAngle)) * Math.max(0.0, Math.min(1.0, endingSpeedRatio));
         endPoint.velocity = new Pos2D(
                 terminalSpeed * Math.cos(endAngle),
                 terminalSpeed * Math.sin(endAngle),
