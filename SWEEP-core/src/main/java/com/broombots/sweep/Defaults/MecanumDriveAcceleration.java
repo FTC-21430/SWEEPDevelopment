@@ -12,10 +12,7 @@ public class MecanumDriveAcceleration {
      * 2PI = 2sqrt3
      * etc...
      */
-    public static double getMovementMagnitude(double movementDirection, double rotationError){
-        double magnitude = (Math.sqrt(2) + 1) + (Math.sqrt(2) - 1) * Math.cos(4 * Math.toRadians(movementDirection));
-        double turnForceRatio = Math.min(1, Math.abs(rotationError)/40) * Math.signum(rotationError);
-        magnitude *= 1 - (turnForceRatio / 2);
-        return magnitude;
+    public static double getMovementMagnitude(double movementDirection){
+        return (Math.sqrt(2) + 1) + (Math.sqrt(2) - 1) * Math.cos(4 * Math.toRadians(movementDirection));
     }
 }

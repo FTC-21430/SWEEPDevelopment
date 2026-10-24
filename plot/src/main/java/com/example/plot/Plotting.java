@@ -27,15 +27,25 @@ public class Plotting {
     public static void main(String[] args) throws PythonExecutionException, IOException {
 
         PathPoint start = new PathPoint();
-        start.position = new Pos2D(-20,10,0);
+        start.position = new Pos2D(0,0,0);
         start.velocity = new Pos2D(0,0,0);
         start.time = 0;
 
         Sequence sequence = new SequenceBuilder(new DefaultRobotMovementParameters())
-                .start(start)
-                .splineToAngle(0,20,90, 1)
-                .splineToAngle(20,20,90, 1)
-                .end(40, 0, 0,0.3)
+                .start(0, 0, 0) // All paths must have a start point as the first
+                .splineToAngle(0,40,0,1)
+                .waitAt(2)
+                .splineToAngle(0,0,0,1)
+                .addBreak()
+                .splineToAngle(0,40,180,1)
+                .waitAt(2)
+                .splineToAngle(0,0,0,1)
+                .splineToAngle(0,40,0,1)
+                .waitAt(2)
+                .splineToAngle(0,0,0,1)
+                .addBreak()
+                .splineToAngle(0,40,180,1)
+                .end(0, 0, 0,1) // robot will move to the end point with the specified coordinates and heading
                 .build();
         SWEEPFullPlotFullRender.PlotRender(sequence, 0.01, LOCAL_VENV_PYTHON);
     }

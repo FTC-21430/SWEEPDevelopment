@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
+import com.broombots.sweep.Classes.Subsystem;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import com.broombots.sweep.Classes.Subsystem;
 
 /**
  * Drivetrain subsystem for a mecanum drive robot.
@@ -39,11 +39,11 @@ public class Drivetrain implements Subsystem {
      * @param telemetryEnabled Flag to enable or disable telemetry output
      */
     public Drivetrain(HardwareMap hardwareMap, Telemetry telemetry, boolean telemetryEnabled){
-        FLMotor = hardwareMap.get(DcMotor.class, "FLMotor");
-        FRMotor = hardwareMap.get(DcMotor.class, "FRMotor");
-        BLMotor = hardwareMap.get(DcMotor.class, "BLMotor");
-        BRMotor = hardwareMap.get(DcMotor.class, "BRMotor");
-        //TODO: check and standardize motor directions
+        FLMotor = hardwareMap.get(DcMotor.class, "fl");
+        FRMotor = hardwareMap.get(DcMotor.class, "fr");
+        BLMotor = hardwareMap.get(DcMotor.class, "bl");
+        BRMotor = hardwareMap.get(DcMotor.class, "br");
+
         motors = new DcMotor[]{FLMotor,FRMotor,BLMotor,BRMotor};
         for (DcMotor motor: motors){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -63,12 +63,15 @@ public class Drivetrain implements Subsystem {
     @Override
     public void update() {
         // To the drive power every iteration
+        // Rotate a copy so the stored input is not rotated again on the next loop
+        double driveX = X;
+        double driveY = Y;
         if (fieldCentricDrivingEnabled){
             double[] fieldVector = calculateFieldCentric(robotYaw);
-            X = fieldVector[0];
-            Y = fieldVector[1];
+            driveX = fieldVector[0];
+            driveY = fieldVector[1];
         }
-        setDrivePower(X,Y,Yaw);
+        setDrivePower(driveX,driveY,Yaw);
         if (telemetryEnabled){
             postDrivetrainTelemetry();
         }
@@ -80,6 +83,7 @@ public class Drivetrain implements Subsystem {
      * @param Yaw The desired rotation
      */
     public void updateMovementVector(double X, double Y, double Yaw){
+        fieldCentricDrivingEnabled = false;
         this.X = X;
         this.Y = Y;
         this.Yaw = Yaw;
@@ -89,10 +93,11 @@ public class Drivetrain implements Subsystem {
      * @param X The desired X movement
      * @param Y The desired Y movement
      * @param Yaw The desired rotation
-     * @param RobotYaw The current robot yaw
+     * @param robotYaw The current robot yaw
      */
     public void updateMovementVector(double X, double Y, double Yaw, double robotYaw){
-        updateMovementVector(X,Y,Yaw);
+        updateMovementVector(X,Y,Yaw); // this clears the field-centric flag, so set it after
+        fieldCentricDrivingEnabled = true;
         this.robotYaw = robotYaw;
     }
     /**
@@ -138,18 +143,19 @@ public class Drivetrain implements Subsystem {
         // Mecanum drive: distribute robot forces to individual motors
         double[] powers = {
                 forward + strafe + rotate, //FL
-                forward - strafe - rotate, //FR
-                forward - strafe + rotate, //BL
+                forward - strafe + rotate, //FR
+                forward - strafe - rotate, //BL
                 forward + strafe - rotate  //BR
         };
-        // Calculate the max power value out of all possible solutions
+        // Calculate the largest power magnitude out of all possible solutions, reverse powers count too
         double maxPower = 0;
         for (double power : powers){
-            maxPower = Math.max(maxPower, power);
+            maxPower = Math.max(maxPower, Math.abs(power));
         }
+        maxPower = maxPower > 1? maxPower : 1;
         // Apply motor power normalized to the greatest possible value
-        for (int i = 0; i < 4; i++){
-            motors[i].setPower(powers[i]/maxPower);
+        for (int i = 0; i < 4; i++) {
+            motors[i].setPower(powers[i] / maxPower);
         }
     }
     /**

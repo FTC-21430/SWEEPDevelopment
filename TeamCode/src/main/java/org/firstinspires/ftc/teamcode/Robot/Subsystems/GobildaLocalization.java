@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
@@ -91,6 +92,7 @@ public class GobildaLocalization implements Localization {
         robotX = x;
         robotY = y;
         robotAngle = angle;
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, angle));
     }
     /**
      * Returns the time between loop iterations - resets between calls!
@@ -110,6 +112,9 @@ public class GobildaLocalization implements Localization {
         velocityY = (robotY - lastRobotY)/dt;
         telemetry.addData("velocityX", velocityX);
         telemetry.addData("velocityY", velocityY);
+    }
+    public void calibrate(){
+        pinpoint.recalibrateIMU();
     }
 
 }
