@@ -1,6 +1,7 @@
 package com.broombots.sweep.Movement;
 
 import com.broombots.sweep.Builder.Sequence;
+import com.broombots.sweep.Builder.SequenceBuilder;
 import com.broombots.sweep.Classes.LocalizationPacket;
 import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
@@ -57,7 +58,14 @@ public class SequenceInterpreter {
     public boolean hasActiveSequence(){
         return currentSequence != null;
     }
-    public void addToCurrentSequence(Sequence sequence){
-        //TODO merge sequences together in real time
+    /**
+     * Appends more movement to the sequence that is currently running.
+     * The new path starts from the last point of the running sequence, so the combined path stays continuous.
+     * @param sequenceBuilder the builder describing the movement to append; its own start is ignored
+     * @throws IllegalStateException if no sequence is running, use startPath() to begin one instead
+     */
+    public void addToCurrentSequence(SequenceBuilder sequenceBuilder){
+        if (currentSequence == null) throw new IllegalStateException("No active sequence to add to, use startPath() first");
+        currentSequence.addToSequence(sequenceBuilder);
     }
 }

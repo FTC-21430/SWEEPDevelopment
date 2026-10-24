@@ -1,6 +1,7 @@
 package com.broombots.sweep.Classes;
 
 import com.broombots.sweep.Builder.Sequence;
+import com.broombots.sweep.Builder.SequenceBuilder;
 import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
 import com.broombots.sweep.Movement.SequenceInterpreter;
 
@@ -42,8 +43,12 @@ public abstract class SWEEPRobot extends Robot {
     public void setPath(Sequence sequence){
         sequenceInterpreter.startPath(sequence);
     }
-    public void addToCurrentSequence(Sequence sequence){
-        sequenceInterpreter.addToCurrentSequence(sequence);
+    /**
+     * Appends more movement to the path the robot is currently following.
+     * @param sequenceBuilder the builder describing the movement to append, it continues from the end of the current path
+     */
+    public void addToCurrentSequence(SequenceBuilder sequenceBuilder){
+        sequenceInterpreter.addToCurrentSequence(sequenceBuilder);
     }
     /**
      * Gets the default range for actions to be triggered during autonomous operation.
