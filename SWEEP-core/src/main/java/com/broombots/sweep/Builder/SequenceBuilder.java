@@ -12,6 +12,7 @@ import com.broombots.sweep.Splines.Segments.AngledSplineSegment;
 import com.broombots.sweep.Splines.Segments.FollowSplineSegment;
 import com.broombots.sweep.Splines.Segments.WaitSegment;
 import com.broombots.sweep.Splines.SplineAngleWaypoint;
+import com.broombots.sweep.Splines.SplineOffsetWaypoint;
 import com.broombots.sweep.Splines.SplineWaypoint;
 import com.broombots.sweep.Splines.StartWaypoint;
 import com.broombots.sweep.Splines.WaitWaypoint;
@@ -150,6 +151,45 @@ public class SequenceBuilder {
         waypoints.add(new SplineAngleWaypoint(definedCoordinate.x,definedCoordinate.y,definedCoordinate.angle,speed));
         previousCoordinate = definedCoordinate;
         return this;
+    }
+    /**
+     * Adds a spline waypoint where the robot heading stays a fixed angle away from the direction of travel.
+     * The path is the same curve as {@link #splineTo(double, double, double)}, only the heading differs.
+     * Switching between forward and offset segments makes the heading jump at the boundary, so add a
+     * {@link #addBreak()} or {@link #waitAt(double)} there to let the robot turn while stopped.
+     * @param x The x coordinate of the waypoint, in inches.
+     * @param y The y coordinate of the waypoint, in inches.
+     * @param offsetDegrees Angle added to the direction of travel, in degrees, positive is counterclockwise.
+     * @param speed The speed at which the robot should travel to the waypoint, from 0 to 1.
+     * @return The current SequenceBuilder instance, allowing for method chaining.
+     */
+    public SequenceBuilder splineToOffset(double x, double y, double offsetDegrees, double speed){
+        speed = clipSpeedToRange(speed);
+        waypoints.add(new SplineOffsetWaypoint(clipCoordinateToField(x),clipCoordinateToField(y),offsetDegrees,speed));
+        previousCoordinate = new Pos2D(x,y,Double.NaN); // Not a Number signals that the angle is resolved after the segment
+        return this;
+    }
+    /**
+     * Adds an offset spline waypoint using a defined coordinate, the angle of the coordinate is ignored.
+     * @param definedCoordinate The coordinate of the waypoint, in inches.
+     * @param offsetDegrees Angle added to the direction of travel, in degrees, positive is counterclockwise.
+     * @param speed The speed at which the robot should travel to the waypoint, from 0 to 1.
+     * @return The current SequenceBuilder instance, allowing for method chaining.
+     * @see #splineToOffset(double, double, double, double)
+     */
+    public SequenceBuilder splineToOffset(Pos2D definedCoordinate, double offsetDegrees, double speed){
+        return splineToOffset(definedCoordinate.x, definedCoordinate.y, offsetDegrees, speed);
+    }
+    /**
+     * Adds a spline waypoint that the robot drives to backwards, with the rear of the robot leading.
+     * Equivalent to {@code splineToOffset(x, y, 180, speed)}.
+     * @param x The x coordinate of the waypoint, in inches.
+     * @param y The y coordinate of the waypoint, in inches.
+     * @param speed The speed at which the robot should travel to the waypoint, from 0 to 1.
+     * @return The current SequenceBuilder instance, allowing for method chaining.
+     */
+    public SequenceBuilder splineToBackwards(double x, double y, double speed){
+        return splineToOffset(x, y, 180, speed);
     }
     /**
      * Adds a break waypoint to the path.
@@ -340,6 +380,8 @@ public class SequenceBuilder {
                 return new FollowSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
             case SPLINE_ANGLE:
                 return new AngledSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1));
+            case SPLINE_OFFSET:
+                return new FollowSplineSegment(getWaypointInRange(waypointIndex-2),getWaypointInRange(waypointIndex-1),waypoint, getWaypointInRange(waypointIndex+1), waypoint.getHeadingOffset());
             case END:
                 // END is handled directly in build() — a FollowSplineSegment is created there.
                 throw new RuntimeException("END waypoints must be handled in build(), not createNewSegment()");

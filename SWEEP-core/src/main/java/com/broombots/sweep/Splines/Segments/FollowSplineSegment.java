@@ -17,10 +17,33 @@ public class FollowSplineSegment implements Segment {
 	private final double sampleRate = 0.001; // units
 	private final double speed;
 
+	/** Constant angle added to the direction of travel to get the robot heading, in degrees. */
+	private final double headingOffsetDegrees;
+
 	/**
-	 * Creates a following spline segment
+	 * Creates a following spline segment whose heading is exactly the direction of travel.
+	 *
+	 * @param p1 control point before the start of this segment
+	 * @param p2 where this segment starts
+	 * @param p3 where this segment ends, its speed sets the speed of the segment
+	 * @param p4 control point after the end of this segment
 	 */
 	public FollowSplineSegment(Waypoint p1, Waypoint p2, Waypoint p3, Waypoint p4) {
+		this(p1, p2, p3, p4, 0);
+	}
+
+	/**
+	 * Creates a following spline segment whose heading is the direction of travel plus a constant offset.
+	 * An offset of 180 drives the robot backwards along the curve.
+	 *
+	 * @param p1 control point before the start of this segment
+	 * @param p2 where this segment starts
+	 * @param p3 where this segment ends, its speed sets the speed of the segment
+	 * @param p4 control point after the end of this segment
+	 * @param headingOffsetDegrees angle added to the direction of travel, in degrees, positive is counterclockwise
+	 */
+	public FollowSplineSegment(Waypoint p1, Waypoint p2, Waypoint p3, Waypoint p4, double headingOffsetDegrees) {
+		this.headingOffsetDegrees = headingOffsetDegrees;
 		xCubic = new CatmullRomCubic(p1.getX(), p2.getX(), p3.getX(), p4.getX());
 		yCubic = new CatmullRomCubic(p1.getY(), p2.getY(), p3.getY(), p4.getY());
 		// comeToStop in MotionProfileProcessor.compileVelocityProfile handles deceleration to zero
@@ -33,7 +56,7 @@ public class FollowSplineSegment implements Segment {
 	 */
 	@Override
 	public Pos2D getPosition(double time) {
-		return new Pos2D(xCubic.evaluate(time), yCubic.evaluate(time), Math.toDegrees(Math.atan2(yCubic.derivative(time), xCubic.derivative(time))));
+		return new Pos2D(xCubic.evaluate(time), yCubic.evaluate(time), Math.toDegrees(Math.atan2(yCubic.derivative(time), xCubic.derivative(time))) + headingOffsetDegrees);
 	}
 	@Override
 	public double calculateDistance(double tStart, double tEnd) {

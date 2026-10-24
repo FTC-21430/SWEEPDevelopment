@@ -12,6 +12,7 @@ public interface Waypoint {
     public enum WaypointType {
         SPLINE,
         SPLINE_ANGLE,
+        SPLINE_OFFSET,
         LINEAR,
         LINEAR_ANGLE,
         BREAK,
@@ -54,6 +55,14 @@ public interface Waypoint {
      */
     default public double getDuration(){
         return 0; // Segment with no waiting at a single point
+    }
+    /**
+     * Gets the constant angle added to the direction of travel while the robot follows the spline to this waypoint.
+     * Only meaningful for {@link WaypointType#SPLINE_OFFSET}; every other type returns 0 by default.
+     * @return the heading offset in degrees, positive is counterclockwise
+     */
+    default public double getHeadingOffset(){
+        return 0; // Heading follows the direction of travel exactly
     }
     /**
      * Gets the type of the waypoint, which defines its behavior in the path.
