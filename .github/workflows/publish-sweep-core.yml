@@ -2,4 +2,4 @@
   env:
     GITHUB_ACTOR: ${{ github.actor }}
     GITHUB_TOKEN: ${{ secrets.JAVA_TOKEN }}
-  run: ./gradlew :SWEEP-core:publishReleasePublicationToGitHubPackagesRepository
+  run: ./gradlew :SWEEP-core:publishGprPublicationToGitHubPackagesRepository
