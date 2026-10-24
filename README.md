@@ -1,3 +1,79 @@
+# SWEEP Path-Following Library
+
+SWEEP is BroomBots FTC Team 21430's Java library for building and following
+time-parameterized autonomous paths. It includes spline waypoints, motion
+profiling, drivetrain control interfaces, and an action scheduler for running
+mechanism work alongside a route.
+
+This repository contains both the FTC Robot Controller project and the SWEEP
+library. The example robot integration is in `TeamCode`; the reusable library is
+in `SWEEP-core`.
+
+**SWEEP documentation**
+
+- [SWEEP-core guide](SWEEP-core/README.md): architecture, API usage, units,
+  action scheduling, path profiling, and design tradeoffs.
+- [TeamCode examples](TeamCode/README.md): how the example robot, route, actions,
+  and OpModes fit together.
+- [Contributing guide](CONTRIBUTING.md): code conventions, validation, and Git
+  workflow.
+
+**Quick start inside this repository**
+
+The included `TeamCode` module already depends on `SWEEP-core` as a Gradle
+project. Build a route with `SequenceBuilder`, then give the resulting
+`Sequence` to a configured `SWEEPRobot`:
+
+```java
+Sequence route = new SequenceBuilder(new DefaultRobotMovementParameters())
+        .start(0, 0, 0)
+        .splineTo(24, 12, 1.0)
+        .splineToBackwards(36, 24, 0.75)
+        .end(48, 24, 90)
+        .build();
+
+robot.setPath(route);
+```
+
+The robot integration must update localization, call the sequence interpreter,
+and send its output to the drivetrain on each active OpMode loop. Read the
+[core guide](SWEEP-core/README.md#running-a-sequence) before adapting this
+example to hardware.
+
+**Using the published artifact**
+
+The Maven coordinates are `com.broombots.sweep:sweep-core:0.9.0-beta`, hosted
+in GitHub Packages at
+`https://maven.pkg.github.com/FTC-21430/SWEEPDevelopment`. Add that Maven
+repository to your Gradle repositories and the dependency to the robot module.
+GitHub Packages requires authentication; provide `gpr.user` and `gpr.key`
+through local Gradle properties or environment variables, never commit a token.
+For example, in a Groovy Gradle project:
+
+```groovy
+allprojects {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/FTC-21430/SWEEPDevelopment")
+            credentials {
+                username = findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation "com.broombots.sweep:sweep-core:0.9.0-beta"
+}
+```
+
+The checked-in FTC project instead uses `implementation project(':SWEEP-core')`,
+so it can be built directly from this repository without resolving the published
+artifact.
+
+---
+
 ## NOTICE
 
 This repository contains the public FTC SDK for the BIOBUZZ (2026-2027) competition season.

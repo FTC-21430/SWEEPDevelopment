@@ -28,6 +28,8 @@ public class PathBuilderExampleUsage extends SWEEPRoute {
                 .addBreak() // adds a break in the path, robot will slow down and stop at the point, but immediately continue to the next point in the path
                 .addAction(r.exampleAction()) // adds an action to be executed at the current point in the path
                 .waitAt(2) // robot will wait at the current point for the specified duration (in seconds)
+                .addBreak()
+                .splineToBackwards(10, 30, 0.5) // follows the spline with the rear of the robot leading
                 .end(0, 40, 0) // robot will move to the end point with the specified coordinates and heading
                 .build(); // finalizes the path and returns a sequence
 
