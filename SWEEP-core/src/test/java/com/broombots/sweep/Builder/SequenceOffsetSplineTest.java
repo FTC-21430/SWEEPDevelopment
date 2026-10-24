@@ -3,6 +3,8 @@ package com.broombots.sweep.Builder;
 import com.broombots.sweep.Classes.PathPoint;
 import com.broombots.sweep.Classes.Pos2D;
 import com.broombots.sweep.Defaults.DefaultRobotMovementParameters;
+import com.broombots.sweep.Splines.SplineWaypoint;
+import com.broombots.sweep.Splines.Segments.FollowSplineSegment;
 
 import org.junit.Test;
 
@@ -36,6 +38,108 @@ public class SequenceOffsetSplineTest {
 		}
 		return settled;
 	}
+
+	/** Verifies adding whole turns to the requested offset does not change robot orientation. */
+	@Test
+	public void offsetsOutsideOneTurnKeepTheSameOrientationAndContinuousHeading() {
+		Sequence ninety = builder().splineToOffset(20, 15, 90, 1).end(40, 0, 0).build();
+		Sequence fourHundredFifty = builder().splineToOffset(20, 15, 450, 1).end(40, 0, 0).build();
+		Sequence negativeTwoSeventy = builder().splineToOffset(20, 15, -270, 1).end(40, 0, 0).build();
+
+		assertEquals(ninety.getLastTime(), fourHundredFifty.getLastTime(), TOLERANCE);
+		assertEquals(ninety.getLastTime(), negativeTwoSeventy.getLastTime(), TOLERANCE);
+		for (double time = 0.05; time < ninety.getLastTime() * 0.6; time += 0.02) {
+			double expected = ninety.getPosition(time).angle;
+			assertEquals(0, angleDifference(expected, fourHundredFifty.getPosition(time).angle), TOLERANCE);
+			assertEquals(0, angleDifference(expected, negativeTwoSeventy.getPosition(time).angle), TOLERANCE);
+		}
+		int checked = 0;
+		ArrayList<PathPoint> samples = PathTestSupport.sample(fourHundredFifty, 0.005);
+		for (int i = 1; i < samples.size(); i++) {
+			PathPoint previous = samples.get(i - 1);
+			PathPoint current = samples.get(i);
+			// Ignore the start-pose-to-path-tangent transition and the later explicit end-heading segment.
+			if (previous.position.x < 1 || current.position.x > 19) continue;
+			double change = Math.abs(current.position.angle - previous.position.angle);
+			assertTrue("Whole-turn offset caused a heading jump of " + change + " degrees",
+					change < 10);
+			assertEquals(0, angleDifference(current.position.angle,
+					negativeTwoSeventy.getPosition(current.time).angle), TOLERANCE);
+			checked++;
+		}
+		assertTrue("Did not inspect enough samples on the offset spline: " + checked, checked > 50);
+	}
+
+	/** Verifies backwards heading stays continuous as curve direction crosses the atan2 +/-180-degree boundary. */
+	@Test
+	public void backwardsHeadingDoesNotJumpWhenTravelDirectionCrossesTheWrapBoundary() {
+		Sequence sequence = builder()
+				.splineToBackwards(-20, 10, 1)
+				.splineToBackwards(-40, -10, 1)
+				.end(-60, 0, 0)
+				.build();
+
+		int checked = 0;
+		ArrayList<PathPoint> samples = PathTestSupport.sample(sequence, 0.005);
+		for (int i = 1; i < samples.size(); i++) {
+			PathPoint previous = samples.get(i - 1);
+			PathPoint current = samples.get(i);
+			if (current.position.x < -40) break;
+			if (current.position.x > -1) continue;
+			double change = Math.abs(current.position.angle - previous.position.angle);
+			assertTrue("Backwards heading jumped by " + change + " degrees near x="
+					+ current.position.x, change < 10);
+			checked++;
+		}
+
+		assertTrue("Did not inspect enough samples around the +/-180-degree crossing: " + checked, checked > 100);
+	}
+
+	/** Verifies raw backwards spline headings cross the atan2 branch cut while remaining physically equivalent. */
+	@Test
+	public void backwardsSplineRawHeadingCrossesAtan2BranchCut() {
+		FollowSplineSegment segment = new FollowSplineSegment(
+				new SplineWaypoint(0, 0, 1),
+				new SplineWaypoint(-1, 0.1, 1),
+				new SplineWaypoint(-2, -0.1, 1),
+				new SplineWaypoint(-3, 0.3, 1),
+				180);
+
+		double startHeading = segment.getPosition(0).angle;
+		double endHeading = segment.getPosition(1).angle;
+
+		assertTrue("Test curve did not cross the numeric angle branch cut",
+				Math.abs(endHeading - startHeading) > 350);
+		assertTrue("The curve's physical orientation should change by only a few degrees",
+				Math.abs(angleDifference(startHeading, endHeading)) < 10);
+	}
+
+	/** Verifies the backwards offset remains 180 degrees from travel direction on both sides of the wrap boundary. */
+	@Test
+	public void backwardsOrientationRemainsOppositeTravelAcrossTheWrapBoundary() {
+		Sequence forwards = builder()
+				.splineTo(-20, 10, 1)
+				.splineTo(-40, -10, 1)
+				.end(-60, 0, 0)
+				.build();
+		Sequence backwards = builder()
+				.splineToBackwards(-20, 10, 1)
+				.splineToBackwards(-40, -10, 1)
+				.end(-60, 0, 0)
+				.build();
+
+		int checked = 0;
+		for (PathPoint point : PathTestSupport.sample(backwards, 0.01)) {
+			if (point.position.x < -40) break;
+			if (point.position.x > -1) continue;
+			double forwardHeading = forwards.getPosition(point.time).angle;
+			assertEquals(180, Math.abs(angleDifference(point.position.angle, forwardHeading)), 1e-3);
+			checked++;
+		}
+
+		assertTrue("Did not compare enough backwards spline samples: " + checked, checked > 50);
+	}
+
 	/** Verifies that offset of zero matches spline to. */
 	@Test
 	public void offsetOfZeroMatchesSplineTo() {
