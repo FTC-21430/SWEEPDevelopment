@@ -93,10 +93,11 @@ public class TemplateBot extends SWEEPRobot {
      * @param position The coordinate around which the action is triggered.
      * @param time       The duration for which the action runs (in seconds).
      * @param range      The trigger radius for the action (in inches).
+     * @param waitTime   The path time (in seconds) that must pass before the action can trigger.
      * @return An instance of ExampleAction.
      */
-    public ExampleAction exampleAction(Pos2D position, double time, double range){
-        return new ExampleAction(this, position, time, range);
+    public ExampleAction exampleAction(Pos2D position, double time, double range, double waitTime){
+        return new ExampleAction(this, position, time, range, waitTime);
     }
 
     /**
@@ -104,6 +105,6 @@ public class TemplateBot extends SWEEPRobot {
      * @return new exampleAction
      */
     public ExampleAction exampleAction(){
-        return new ExampleAction(this, null, getDefaultActionTime(), getDefaultActionRange());
+        return new ExampleAction(this, null, getDefaultActionTime(), getDefaultActionRange(), 0);
     }
 }

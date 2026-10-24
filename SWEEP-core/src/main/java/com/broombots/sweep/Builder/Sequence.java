@@ -23,18 +23,20 @@ public class Sequence {
     // The action that is currently being executed. This is used to determine if the action has completed and if the next action should be executed.
     private SWEEPAction activeAction;
 
+    private ArrayList<Double> segmentTimeMarkers;
+
     /**
      * Constructs a Path with the given segments and actions.
      * @param compiledPath the velocityMap that makes up the entire path - this will be based off of the robot Params
      * @param actions The actions that can be executed during the path.
      */
-    public Sequence(ArrayList<PathPoint> compiledPath, SWEEPAction[] actions){
+    public Sequence(ArrayList<PathPoint> compiledPath, SWEEPAction[] actions, ArrayList<Double> segmentTimeMarkers){
         if (compiledPath == null) throw new IllegalArgumentException("null path given");
         if (actions == null) throw new IllegalArgumentException("null action array given");
         this.compiledPath = compiledPath;
         this.actions = new ArrayList<>();
+        this.segmentTimeMarkers = segmentTimeMarkers;
         Collections.addAll(this.actions, actions);
-
         System.out.println("Compiled path has " + compiledPath.size() + " points");
     }
 
@@ -42,8 +44,9 @@ public class Sequence {
      * Check the first action in queue based on robot location data, and execute it if met.
      * Shifts the queue forward if the front is executed
      * @param packet The localization packet containing the robot's current position and state.
+     * @param currentTime Seconds since the sequence started, actions wait until this passes their wait time.
      */
-    public void updateActions(LocalizationPacket packet){
+    public void updateActions(LocalizationPacket packet, double currentTime){
         if (activeAction != null){
             if (activeAction.completion()) {
                 activeAction.end();
@@ -51,21 +54,22 @@ public class Sequence {
             }else{
                 activeAction.process();
             }
-        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet)){
+        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet, currentTime) && getTimeForSplineIndex(actions.get(0).getSplineIndex()) <= currentTime){
             if (actions.isEmpty()) return;
             activeAction = actions.get(0);
             actions.remove(0);
+            activeAction.resetTimer();
             activeAction.execute();
         }
     }
-    public String updateActionsInSimulation(LocalizationPacket packet){
+    public String updateActionsInSimulation(LocalizationPacket packet, double currentTime){
         if (activeAction != null){
             if (activeAction.completion()) {
                 activeAction = null;
             }else{
 
             }
-        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet)){
+        } else if (!actions.isEmpty() && actions.get(0).checkTrigger(packet, currentTime)){
             if (actions.isEmpty()) return "";
             activeAction = actions.get(0);
             actions.remove(0);
@@ -90,6 +94,30 @@ public class Sequence {
 
         return new int[]{low, high};
     }
+    private double getTimeForSplineIndex(int index){
+        if (segmentTimeMarkers.isEmpty()) return 0;
+        index = Math.max(0, Math.min(index, segmentTimeMarkers.size() - 1));
+        return segmentTimeMarkers.get(index);
+    }
+
+    private int getCurrentSplineIdxToTime(double time){
+        if (segmentTimeMarkers.isEmpty()) return 0;
+        int low = 0;
+        int high = segmentTimeMarkers.size()-1;
+
+        while (high - low > 1){
+            int mid = (low+high) / 2;
+            if (time >= segmentTimeMarkers.get(mid)){
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+
+        return low;
+    }
+
+
     private double getRatioBetweenTimes(double t1, double t2, double targetTime){
         return (targetTime-t1)/(t2-t1);
     }

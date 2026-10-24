@@ -8,7 +8,10 @@ import com.broombots.sweep.Classes.RobotMovementParameters;
 import com.broombots.sweep.Splines.Segment;
 import com.broombots.sweep.Splines.Segments.WaitSegment;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Objects;
 
 public class PathProcessor {
     private RobotMovementParameters movementParameters;
@@ -22,7 +25,7 @@ public class PathProcessor {
 
         final double pi = Math.PI; // shorthand for myself because I need to type this a lot, Style guide exception please.
 
-        // Create regression from change in RAD per inch to speed change //TODO TUNE
+        // Create regression from change in RAD per inch to speed change //TODO TUNE and change to be config in movementParameters
         regression = new LerpFunctionBuilder()
                 .addPoint(0,1)
                 .addPoint(0.03, 0.98)
@@ -30,20 +33,24 @@ public class PathProcessor {
                 .addPoint(0.35, 0.05)
                 .build();
     }
-    public ArrayList<PathPoint> processPath(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio) {
+    public ArrayList<Object> processPath(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio) {
+        ArrayList<Double> segmentTimeMarkers = new ArrayList<>();
         ArrayList<PathPoint> path = new ArrayList<>();
         ArrayList<ArrayList<Segment>> brokenSegments = breakUpComplexRoute(segments);
         for (int i = 0; i < brokenSegments.size(); i++){
             ArrayList<Segment> segmentList = brokenSegments.get(i);
             if (segmentList.get(0) instanceof WaitSegment){
-                path.addAll(processWaitSegments(segmentList.toArray(new Segment[0]), sampleRate, path.isEmpty() ? startingPoint.time : path.get(path.size()-1).time));
+                path.addAll(processWaitSegments(segmentList.toArray(new Segment[0]), sampleRate, path.isEmpty() ? startingPoint.time : path.get(path.size()-1).time, segmentTimeMarkers));
             }else{
                 double speedRate = i < brokenSegments.size()-1? 0 : endingSpeedRatio;
                 PathPoint prevPoint = i > 0? path.get(path.size()-1) : startingPoint;
-                path.addAll(processMovementSegments(segmentList.toArray(new Segment[0]), sampleRate, prevPoint, speedRate, prevPoint.time));
+                path.addAll(processMovementSegments(segmentList.toArray(new Segment[0]), sampleRate, prevPoint, speedRate, segmentTimeMarkers));
             }
         }
-        return path;
+        ArrayList<Object> result = new ArrayList<>();
+        result.add(path);
+        result.add(segmentTimeMarkers);
+        return result;
     }
     private ArrayList<ArrayList<Segment>> breakUpComplexRoute(Segment[] segments){
         ArrayList<ArrayList<Segment>> result = new ArrayList<>();
@@ -62,10 +69,11 @@ public class PathProcessor {
         if (!currentSegmentList.isEmpty()) result.add(currentSegmentList);
         return result;
     }
-    private ArrayList<PathPoint> processWaitSegments(Segment[] segments, double sampleRate, double startTime){
+    private ArrayList<PathPoint> processWaitSegments(Segment[] segments, double sampleRate, double startTime, ArrayList<Double> segmentTimeMarkers){
         ArrayList<PathPoint> path = new ArrayList<>();
         double lastTime = startTime;
         for (Segment segment : segments){
+            segmentTimeMarkers.add(lastTime);
             WaitSegment waitSegment = (WaitSegment) segment;
             for (double t = lastTime; t < waitSegment.getDuration()+lastTime; t += sampleRate){
                 Pos2D pos2D = waitSegment.getPosition(t);
@@ -83,8 +91,9 @@ public class PathProcessor {
         lastRenderedPosition = path.get(path.size()-1).position;
         return path;
     }
-    private ArrayList<PathPoint> processMovementSegments(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio, double startTime){
+    private ArrayList<PathPoint> processMovementSegments(Segment[] segments, double sampleRate, PathPoint startingPoint, double endingSpeedRatio, ArrayList<Double> segmentTimeMarkers){
         ArrayList<PathPoint> path = new ArrayList<>();
+        ArrayList<Integer> waypointIndexInPath = new ArrayList<>();
 
         PathPoint stPoint = startingPoint;
 
@@ -96,6 +105,7 @@ public class PathProcessor {
         speedRatios.add(segments[0].getSpeedRate());
         for (int i = 0; i < segments.length; i++){
             Segment segment = segments[i];
+            waypointIndexInPath.add(path.size());
             for (double t = 0.0 + 1e-7; t < 1.0; t += sampleRate){
                 Pos2D pos2D = segment.getPosition(t);
                 PathPoint point = new PathPoint();
@@ -103,7 +113,9 @@ public class PathProcessor {
                 path.add(point);
                 speedRatios.add(segment.getSpeedRate());
             }
+
         }
+        waypointIndexInPath.add(path.size());
         PathPoint endPoint = new PathPoint();
         endPoint.position = segments[segments.length-1].getPosition(1);
 
@@ -120,6 +132,7 @@ public class PathProcessor {
         path = generatePathPoints(path);
 
         double time = startingPoint.time;
+        segmentTimeMarkers.add(time);
 
         for (int i = 1; i < path.size(); i++){
             PathPoint lastPoint = path.get(i-1);
@@ -135,9 +148,14 @@ public class PathProcessor {
             }
 
             time += dt;
+            if (waypointIndexInPath.contains(i)){
+                segmentTimeMarkers.add(time);
+            }
+
 
             path.get(i).time = time;
         }
+
         speedRatios.clear();
         lastRenderedPosition = path.get(path.size()-1).position;
         return path;

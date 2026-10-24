@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public abstract class Action {
     // The robot that this action is being executed on
     Robot robot;
+    double waitTime = 0;
     double holdTime = 0; // Default hold time of 0 seconds, can be changed in the constructor
     // Timer to track how long the action has been running
     private final ElapsedTime timer = new ElapsedTime();
@@ -27,6 +28,15 @@ public abstract class Action {
      */
     public void setHoldTime(double holdTime){
         this.holdTime = holdTime;
+    }
+    public void setWaitTime(double waitTime){
+        this.waitTime = waitTime;
+    }
+    /**
+     * Restarts the hold timer, called by whatever starts the action so hold time counts from the start, not construction.
+     */
+    public void resetTimer(){
+        timer.reset();
     }
     /**
      * Start the action - any initial logic

@@ -11,6 +11,9 @@ public abstract class SWEEPAction extends Action {
      * Allowed trigger distance from the target position in inches.
      */
     double triggerTolerance = 6; //default tolerance of 6 inches, can be changed in the constructor
+
+    int splineIndex = -1;
+
     /**
      * Target position in inches that triggers this action.
      */
@@ -18,47 +21,84 @@ public abstract class SWEEPAction extends Action {
 
     /**
      * Creates a new SWEEPAction, which extends an Action and adds the ability to be autonomously triggered with a route
-     * @param robot the robot instance
-     * @param triggerPosition the position that triggers this action
-     * @param holdTime the time to hold the action
+     *
+     * @param robot            the robot instance
+     * @param triggerPosition  the position that triggers this action
+     * @param holdTime         the time to hold the action
      * @param triggerTolerance the allowed trigger distance from the target position
+     * @param waitTime         the time to wait before triggering the action
      */
-    public SWEEPAction(Robot robot, Pos2D triggerPosition, double holdTime, double triggerTolerance){
+    public SWEEPAction(Robot robot, Pos2D triggerPosition, double holdTime, double triggerTolerance, double waitTime) {
         super(robot);
         this.triggerPosition = triggerPosition;
         setHoldTime(holdTime);
         this.triggerTolerance = triggerTolerance;
+        setWaitTime(waitTime);
+    }
+
+    public SWEEPAction(Robot robot, double holdTime) {
+        super(robot);
+        setHoldTime(holdTime);
+    }
+
+    public SWEEPAction(Robot robot, double holdTime, double waitTime) {
+        super(robot);
+        setHoldTime(holdTime);
+        setWaitTime(waitTime);
     }
 
     /**
      * A simple sweep action that will use default triggers based on the PathBuilder or triggered immediately in teleop
+     *
      * @param robot the robot instance
      */
-    public SWEEPAction(Robot robot){
+    public SWEEPAction(Robot robot) {
         super(robot);
     }
 
     /**
      * Check if the trigger position has been set, used by the PathBuilder to know if it should override it with the previous position the user programmed in
+     *
      * @return true if the trigger position has been set, false otherwise
      */
-    public boolean isPositionSet(){
+    public boolean isPositionSet() {
         return triggerPosition != null;
     }
+
     /**
      * Set the trigger position for this action
+     *
      * @param position the position that triggers this action
      */
-    public void setPosition(Pos2D position){
+    public void setPosition(Pos2D position) {
         if (position == null) throw new NullPointerException("Position cannot be null");
         this.triggerPosition = position;
     }
+
     /**
      * Check if the action is ready to trigger yet
-     * @param packet Check proximity to the stored point
+     *
+     * @param packet      Check proximity to the stored point
+     * @param currentTime The current time to check against the wait time
      * @return true if the action is ready to trigger, false otherwise
      */
-    public boolean checkTrigger(LocalizationPacket packet){
-        return Pos2D.getDistanceBetweenCoordinates(packet.getCoordinate(), triggerPosition) <= triggerTolerance;
+    public boolean checkTrigger(LocalizationPacket packet, double currentTime) {
+        return Pos2D.getDistanceBetweenCoordinates(packet.getCoordinate(), triggerPosition) <= triggerTolerance && currentTime >= waitTime;
+    }
+
+    public boolean checkTrigger(LocalizationPacket packet) {
+        return checkTrigger(packet, 0);
+    }
+
+    public boolean isSplineIndexSet() {
+        return splineIndex != -1;
+    }
+
+    public int getSplineIndex() {
+        return splineIndex;
+    }
+
+    public void setSplineIndex(int splineIndex) {
+        this.splineIndex = splineIndex;
     }
 }

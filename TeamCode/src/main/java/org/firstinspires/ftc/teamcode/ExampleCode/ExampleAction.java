@@ -14,9 +14,10 @@ public class ExampleAction extends SWEEPAction {
      * @param coordinate trigger center coordinate
      * @param time action runtime in seconds
      * @param range trigger radius in inches
+     * @param waitTime path time in seconds that must pass before the action can trigger
      */
-    public ExampleAction (TemplateBot robot, Pos2D coordinate, double time, double range){
-        super(robot, coordinate, time, range);
+    public ExampleAction (TemplateBot robot, Pos2D coordinate, double time, double range, double waitTime){
+        super(robot, coordinate, time, range, waitTime);
     }
     @Override
     public void execute() {

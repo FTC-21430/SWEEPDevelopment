@@ -29,14 +29,14 @@ public class SequenceInterpreter {
 
         controller.updateMovementCoeffs(robotMovementParameters.getPIDCoefficients());
         if (currentSequence == null) return new Pos2D(0,0,0);
-        currentSequence.updateActions(localizationPacket);
+        currentSequence.updateActions(localizationPacket, sweepTimer.getSeconds());
         Pos2D driveTrainMovement = controller.getRobotDrivePowers(localizationPacket, currentSequence.getMovement(sweepTimer.getSeconds()));
         if (sweepTimer.getSeconds() > currentSequence.getLastTime()) currentSequence = null;
         return driveTrainMovement;
     }
 
     public String updateSimulation(LocalizationPacket localizationPacket){
-        return currentSequence.updateActionsInSimulation(localizationPacket);
+        return currentSequence.updateActionsInSimulation(localizationPacket, sweepTimer.getSeconds());
     }
     public Pos2D getRobotTargetPosition(){
         return getPathPoint().position;

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * The Robot class is the base class for all robots in the BroomBots framework.
@@ -109,11 +110,13 @@ public abstract class Robot {
      * It processes each active action, checks for completion, and removes completed actions from the active list.
      */
     public void updateActions(){
-        for (Action action : activeActions){
+        Iterator<Action> iterator = activeActions.iterator();
+        while (iterator.hasNext()){
+            Action action = iterator.next();
             action.process();
             if (action.completion()){
                 action.end();
-                activeActions.remove(action);
+                iterator.remove();
             }
         }
     }
@@ -123,6 +126,7 @@ public abstract class Robot {
      */
     public void runAction(Action action){
         if (action == null) return;
+        action.resetTimer();
         action.execute();
         activeActions.add(action);
     }

@@ -81,7 +81,9 @@ public class SequenceBuilder {
     public SequenceBuilder addAction(SWEEPAction actionClass){
         if (actionClass == null) throw new NullPointerException("Action cannot be null");
         if (!actionClass.isPositionSet()) actionClass.setPosition(previousCoordinate);
+        actionClass.setSplineIndex(waypoints.size()-1);
         actions.add(actionClass);
+
         return this;
     }
 
@@ -285,7 +287,8 @@ public class SequenceBuilder {
         }
 
         PathProcessor profileProcessor = new PathProcessor(movementParameters);
-        return new Sequence(profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint, endingSpeedRatio),actions.toArray(new SWEEPAction[0]));
+        ArrayList<Object> pathData = profileProcessor.processPath(segments.toArray(new Segment[0]), sampleRate, startingPoint, endingSpeedRatio);
+        return new Sequence((ArrayList<PathPoint>) pathData.get(0), actions.toArray(new SWEEPAction[0]), (ArrayList<Double>) pathData.get(1));
     }
     /**
      * Creates a new segment based on the waypoint type at the specified index.
