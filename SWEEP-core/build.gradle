@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 group = 'com.broombots.sweep'
-version = '0.9.0-beta'
+version = '0.9.1-beta'
 
 android {
     namespace = 'com.broombots.sweep'

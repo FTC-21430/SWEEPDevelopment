@@ -42,7 +42,7 @@ example to hardware.
 
 **Using the published artifact**
 
-The Maven coordinates are `com.broombots.sweep:sweep-core:0.9.0-beta`, hosted
+The Maven coordinates are `com.broombots.sweep:sweep-core:0.9.1-beta`, hosted
 in GitHub Packages at
 `https://maven.pkg.github.com/FTC-21430/SWEEPDevelopment`. Add that Maven
 repository to your Gradle repositories and the dependency to the robot module.
@@ -64,7 +64,7 @@ allprojects {
 }
 
 dependencies {
-    implementation "com.broombots.sweep:sweep-core:0.9.0-beta"
+    implementation "com.broombots.sweep:sweep-core:0.9.1-beta"
 }
 ```
 

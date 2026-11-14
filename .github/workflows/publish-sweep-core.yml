@@ -1,5 +1,30 @@
-- name: Publish
-  env:
-    GITHUB_ACTOR: ${{ github.actor }}
-    GITHUB_TOKEN: ${{ secrets.JAVA_TOKEN }}
-  run: ./gradlew :SWEEP-core:publishGprPublicationToGitHubPackagesRepository
+name: Publish SWEEP core
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Configure Android build
+        run: |
+          printf '%s\n' \
+            'android.useAndroidX=true' \
+            'android.enableJetifier=false' \
+            'android.nonTransitiveRClass=false' > gradle.properties
+      - name: Test SWEEP core
+        run: ./gradlew :SWEEP-core:testDebugUnitTest
+      - name: Publish SWEEP core
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :SWEEP-core:publishGprPublicationToGitHubPackagesRepository
