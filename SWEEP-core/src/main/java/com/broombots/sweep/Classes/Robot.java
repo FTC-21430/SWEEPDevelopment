@@ -23,7 +23,7 @@ public abstract class Robot {
     /** Active actions; package-visible for package-level robot lifecycle tests. */
     ArrayList<Action> activeActions = new ArrayList<>();
     /** Alliance choices returned by the protected alliance accessors. */
-    enum Alliance {
+    public enum Alliance {
         /** Red alliance. */
         RED,
         /** Blue alliance. */
